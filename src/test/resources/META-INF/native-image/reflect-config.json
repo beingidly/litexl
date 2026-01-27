@@ -1,0 +1,213 @@
+[
+  {
+    "name": "com.beingidly.litexl.mapper.internal.WorkbookReaderTest$Person",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.internal.WorkbookReaderTest$SimpleWorkbook",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.internal.WorkbookReaderTest$IndexWorkbook",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.internal.WorkbookWriterTest$Person",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.internal.WorkbookWriterTest$SimpleWorkbook",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.internal.WorkbookWriterTest$OffsetWorkbook",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.LitexlMapperTest$Person",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.LitexlMapperTest$SimpleWorkbook",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.LitexlMapperIntegrationTest$Money",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.LitexlMapperIntegrationTest$MoneyConverter",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.LitexlMapperIntegrationTest$LocalDateConverter",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.LitexlMapperIntegrationTest$LocalDateTimeConverter",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.LitexlMapperIntegrationTest$HeaderStyle",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.LitexlMapperIntegrationTest$Employee",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.LitexlMapperIntegrationTest$Summary",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.LitexlMapperIntegrationTest$CompanyReport",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.LitexlMapperIntegrationTest$Item",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.LitexlMapperIntegrationTest$OffsetReport",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.internal.ReflectionHelperTest$Person",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.internal.ReflectionHelperTest$TestWorkbook",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.internal.ReflectionHelperTest$MutablePerson",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.internal.WorkbookReaderRegionTest$Employee",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.internal.WorkbookReaderRegionTest$Department",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.internal.WorkbookReaderRegionTest$MultiRegionSheet",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.internal.WorkbookReaderRegionTest$MultiRegionWorkbook",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.internal.RegionDetectorTest$Employee",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.internal.RegionDetectorTest$Department",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.AnnotationTest$TestWorkbook",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.AnnotationTest$TestRow",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.AnnotationTest$TestSummary",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true,
+    "allRecordComponents": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.InterfaceTest$IntConverter",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "com.beingidly.litexl.mapper.InterfaceTest$BoldStyle",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true
+  }
+]

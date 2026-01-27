@@ -1,0 +1,30 @@
+[
+  {
+    "name": "javax.xml.stream.XMLInputFactory",
+    "methods": [{"name": "newInstance", "parameterTypes": []}]
+  },
+  {
+    "name": "javax.xml.stream.XMLOutputFactory",
+    "methods": [{"name": "newInstance", "parameterTypes": []}]
+  },
+  {
+    "name": "com.sun.xml.internal.stream.XMLInputFactoryImpl",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "com.sun.xml.internal.stream.XMLOutputFactoryImpl",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "javax.crypto.Cipher",
+    "methods": [{"name": "getInstance", "parameterTypes": ["java.lang.String"]}]
+  },
+  {
+    "name": "javax.crypto.spec.SecretKeySpec",
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "javax.crypto.spec.IvParameterSpec",
+    "allDeclaredConstructors": true
+  }
+]

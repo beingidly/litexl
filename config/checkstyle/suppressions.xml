@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+    <!-- Suppress checks for test files -->
+    <suppress files=".*Test\.java" checks="MagicNumber"/>
+    <suppress files=".*Test\.java" checks="MethodLength"/>
+    <suppress files=".*Test\.java" checks="LineLength"/>
+
+    <!-- Suppress checks for benchmark module -->
+    <suppress files="[\\/]benchmark[\\/]" checks=".*"/>
+
+    <!-- Suppress checks for examples module -->
+    <suppress files="[\\/]examples[\\/]" checks=".*"/>
+</suppressions>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Exclude test classes -->
+    <Match>
+        <Source name="~.*Test\.java"/>
+    </Match>
+
+    <!-- Exclude benchmark module -->
+    <Match>
+        <Package name="~com\.beingidly\.litexl\.benchmark.*"/>
+    </Match>
+
+    <!-- Exclude examples module -->
+    <Match>
+        <Package name="~com\.beingidly\.litexl\.examples.*"/>
+    </Match>
+</FindBugsFilter>
