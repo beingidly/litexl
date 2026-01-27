@@ -3,15 +3,15 @@
 java = "25"
 
 # Plugins
-graalvm-native = "0.10.4"
-spotbugs-plugin = "6.0.26"
+graalvm-native = "0.11.4"
+spotbugs-plugin = "6.4.8"
 checkstyle = "10.20.1"
-maven-publish = "0.30.0"
+maven-publish = "0.36.0"
 
 # Dependencies
 jspecify = "1.0.0"
 junit = "5.11.0"
-poi = "5.3.0"
+poi = "5.5.1"
 
 # Tools
 jacoco = "0.8.14"
