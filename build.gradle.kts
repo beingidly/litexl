@@ -104,6 +104,10 @@ tasks.withType<Checkstyle>().configureEach {
 
 // Maven Central publishing via vanniktech plugin
 mavenPublishing {
+    configure(com.vanniktech.maven.publish.JavaLibrary(
+        javadocJar = com.vanniktech.maven.publish.JavadocJar.Javadoc(),
+        sourcesJar = true
+    ))
     publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
     signAllPublications()
 
