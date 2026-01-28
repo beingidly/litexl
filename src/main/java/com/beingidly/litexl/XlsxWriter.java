@@ -236,6 +236,22 @@ final class XlsxWriter implements Closeable {
             xml.attribute("xmlns", NS_SPREADSHEETML);
             xml.attribute("xmlns:r", NS_RELATIONSHIPS);
 
+            // Column widths (must come before sheetData per OOXML spec)
+            Map<Integer, Double> colWidths = sheet.columnWidths();
+            if (!colWidths.isEmpty()) {
+                xml.startElement("cols");
+                for (Map.Entry<Integer, Double> entry : colWidths.entrySet()) {
+                    int col = entry.getKey();
+                    double width = entry.getValue();
+                    xml.emptyElement("col");
+                    xml.attribute("min", String.valueOf(col + 1));
+                    xml.attribute("max", String.valueOf(col + 1));
+                    xml.attribute("width", String.valueOf(width));
+                    xml.attribute("customWidth", "1");
+                }
+                xml.endElement(); // cols
+            }
+
             // Sheet data
             xml.startElement("sheetData");
 
@@ -264,6 +280,11 @@ final class XlsxWriter implements Closeable {
                 writeSheetProtection(xml, sheet);
             }
 
+            // AutoFilter (must come before mergeCells per OOXML spec)
+            if (sheet.autoFilter() != null) {
+                writeAutoFilter(xml, sheet.autoFilter());
+            }
+
             // Merged cells
             if (!sheet.mergedCells().isEmpty()) {
                 xml.startElement("mergeCells");
@@ -290,11 +311,6 @@ final class XlsxWriter implements Closeable {
                     writeDataValidation(xml, dv);
                 }
                 xml.endElement();
-            }
-
-            // AutoFilter
-            if (sheet.autoFilter() != null) {
-                writeAutoFilter(xml, sheet.autoFilter());
             }
 
             xml.endElement(); // worksheet
