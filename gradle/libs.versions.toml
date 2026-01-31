@@ -4,7 +4,7 @@ java = "25"
 
 # Plugins
 graalvm-native = "0.10.4"
-spotbugs-plugin = "6.0.26"
+spotbugs-plugin = "6.4.8"
 checkstyle = "10.20.1"
 maven-publish = "0.30.0"
 
