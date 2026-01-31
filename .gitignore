@@ -17,3 +17,6 @@ Thumbs.db
 
 # Test outputs
 *.xlsx.tmp
+
+# Worktrees
+.worktrees/
