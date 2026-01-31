@@ -11,7 +11,6 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Base64;
-import javax.crypto.Cipher;
 import javax.xml.stream.*;
 import org.jspecify.annotations.Nullable;
 
@@ -30,9 +29,6 @@ public final class AgileDecryptor {
     private final String password;
     private @Nullable EncryptionInfo parsedInfo;
 
-    // Reusable crypto instance
-    private final Cipher cipher;
-
     /**
      * Creates a new decryptor with the given password.
      *
@@ -40,11 +36,6 @@ public final class AgileDecryptor {
      */
     public AgileDecryptor(String password) {
         this.password = password;
-        try {
-            this.cipher = Cipher.getInstance("AES/CBC/NoPadding");
-        } catch (GeneralSecurityException e) {
-            throw new RuntimeException("AES cipher not available", e);
-        }
     }
 
     /**
@@ -189,18 +180,16 @@ public final class AgileDecryptor {
         );
 
         // Decrypt verifier input
-        byte[] decryptedVerifierInput = AesCipher.decrypt(
-            cipher, parsedInfo.encryptedVerifierInput(), verifierInputKey, parsedInfo.iv()
-        );
+        byte[] decryptedVerifierInput = new AesCipher(verifierInputKey)
+            .decrypt(parsedInfo.encryptedVerifierInput(), parsedInfo.iv());
 
         // Verify password by checking verifier hash
         byte[] verifierHashKey = KeyDerivation.deriveKeyFromIntermediate(
             intermediateHash, keyBits, KeyDerivation.BLOCK_KEY_VERIFIER_VALUE
         );
 
-        byte[] decryptedVerifierHash = AesCipher.decrypt(
-            cipher, parsedInfo.encryptedVerifierHash(), verifierHashKey, parsedInfo.iv()
-        );
+        byte[] decryptedVerifierHash = new AesCipher(verifierHashKey)
+            .decrypt(parsedInfo.encryptedVerifierHash(), parsedInfo.iv());
 
         // Compute expected hash
         try {
@@ -221,9 +210,8 @@ public final class AgileDecryptor {
             intermediateHash, keyBits, KeyDerivation.BLOCK_KEY_ENCRYPTED_KEY
         );
 
-        byte[] encryptionKey = AesCipher.decrypt(
-            cipher, parsedInfo.encryptedKey(), keyDerivedKey, parsedInfo.iv()
-        );
+        byte[] encryptionKey = new AesCipher(keyDerivedKey)
+            .decrypt(parsedInfo.encryptedKey(), parsedInfo.iv());
         encryptionKey = Arrays.copyOf(encryptionKey, keyBits / 8);
 
         // Decrypt the data using keyDataSalt for IV generation
@@ -246,7 +234,8 @@ public final class AgileDecryptor {
         int segmentIndex = 0;
         int remaining = (int) originalSize;
 
-        // Reusable Direct buffers for decryption
+        // Reusable crypto and buffers for decryption
+        AesCipher aesCipher = new AesCipher(key);
         int maxPaddedLen = ((segmentSize + 15) / 16) * 16;
         ByteBuffer segmentInputBuf = ByteBuffer.allocateDirect(maxPaddedLen);
         ByteBuffer decryptBuf = ByteBuffer.allocateDirect(maxPaddedLen);
@@ -280,7 +269,7 @@ public final class AgileDecryptor {
             System.arraycopy(hash, 0, ivBuffer, 0, 16);
 
             decryptBuf.clear();
-            AesCipher.decrypt(cipher, segmentInputBuf, decryptBuf, key, ivBuffer);
+            aesCipher.decrypt(segmentInputBuf, decryptBuf, ivBuffer);
             decryptBuf.flip();
 
             decryptBuf.limit(encryptedSegmentLen);

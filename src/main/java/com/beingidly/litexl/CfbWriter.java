@@ -9,7 +9,6 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
-import javax.crypto.Cipher;
 
 /**
  * Writer for CFB (Compound File Binary) format used by encrypted Office documents.
@@ -182,7 +181,7 @@ final class CfbWriter implements Closeable {
     // Reusable buffers
     private final byte[] ivBuffer = new byte[16];
     private final byte[] readBuffer = new byte[SEGMENT_SIZE];
-    private final Cipher cipher;
+    private final AesCipher aesCipher;
 
     /**
      * Creates a new CFB writer.
@@ -197,11 +196,7 @@ final class CfbWriter implements Closeable {
         this.encryptionInfo = encryptionInfo;
         this.encryptionKey = encryptionKey;
         this.keyDataSalt = keyDataSalt;
-        try {
-            this.cipher = Cipher.getInstance("AES/CBC/NoPadding");
-        } catch (GeneralSecurityException e) {
-            throw new RuntimeException("AES cipher not available", e);
-        }
+        this.aesCipher = new AesCipher(encryptionKey);
     }
 
     /**
@@ -366,7 +361,7 @@ final class CfbWriter implements Closeable {
 
             // Encrypt segment and write directly to MappedByteBuffer
             ByteBuffer input = ByteBuffer.wrap(readBuffer, 0, totalRead);
-            int encryptedLen = AesCipher.encrypt(cipher, input, buffer, encryptionKey, ivBuffer);
+            int encryptedLen = aesCipher.encrypt(input, buffer, ivBuffer);
             bytesWritten += encryptedLen;
 
             remaining -= totalRead;

@@ -8,7 +8,6 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Arrays;
-import javax.crypto.Cipher;
 
 /**
  * ECMA-376 Agile Encryption encryptor.
@@ -29,9 +28,7 @@ public final class AgileEncryptor {
     private final SecureRandom random = new SecureRandom();
 
     // Reusable crypto instances (allocated once per encryptor)
-    private final Cipher cipher;
     private final MessageDigest sha512;
-    private final ByteBuffer ivIndexBuf;
 
     /**
      * Creates a new encryptor with the given options.
@@ -41,12 +38,10 @@ public final class AgileEncryptor {
     public AgileEncryptor(EncryptionOptions options) {
         this.options = options;
         try {
-            this.cipher = Cipher.getInstance("AES/CBC/NoPadding");
             this.sha512 = MessageDigest.getInstance("SHA-512");
         } catch (GeneralSecurityException e) {
             throw new RuntimeException("Required crypto algorithms not available", e);
         }
-        this.ivIndexBuf = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN);
     }
 
     /**
@@ -82,24 +77,21 @@ public final class AgileEncryptor {
             intermediateHash, keyBits, KeyDerivation.BLOCK_KEY_VERIFIER_VALUE
         );
 
-        // Encrypt the encryption key (small data - use byte[] API with reusable cipher)
+        // Encrypt the encryption key
         byte[] iv = new byte[BLOCK_SIZE];
         random.nextBytes(iv);
-        byte[] encryptedKey = AesCipher.encrypt(cipher, encryptionKey, keyDerivedKey, iv);
+        byte[] encryptedKey = new AesCipher(keyDerivedKey).encrypt(encryptionKey, iv);
 
-        // Generate verifier (small data - use byte[] API with reusable cipher)
+        // Generate verifier
         byte[] verifierInput = new byte[SALT_SIZE];
         random.nextBytes(verifierInput);
-        byte[] encryptedVerifierInput = AesCipher.encrypt(cipher, verifierInput, verifierInputKey, iv);
+        byte[] encryptedVerifierInput = new AesCipher(verifierInputKey).encrypt(verifierInput, iv);
 
         sha512.reset();
         byte[] verifierHash = sha512.digest(verifierInput);
 
-        byte[] encryptedVerifierHash = AesCipher.encrypt(
-            cipher,
-            Arrays.copyOf(verifierHash, 32),
-            verifierHashKey, iv
-        );
+        byte[] encryptedVerifierHash = new AesCipher(verifierHashKey)
+            .encrypt(Arrays.copyOf(verifierHash, 32), iv);
 
         // Encrypt the data (large data - use ByteBuffer API)
         ByteBuffer encryptedData = encryptData(data, encryptionKey);
@@ -144,9 +136,12 @@ public final class AgileEncryptor {
         // Write original size
         output.putLong(dataLength);
 
-        // Reusable Direct buffers for encryption
+        // Reusable crypto and buffers for encryption
+        AesCipher aesCipher = new AesCipher(key);
         ByteBuffer inputBuf = ByteBuffer.allocateDirect(SEGMENT_SIZE);
         ByteBuffer encryptBuf = ByteBuffer.allocateDirect(SEGMENT_SIZE);
+        ByteBuffer ivIndexBuf = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN);
+        byte[] ivBuffer = new byte[16];
 
         int segmentIndex = 0;
         while (data.hasRemaining()) {
@@ -160,10 +155,18 @@ public final class AgileEncryptor {
             data.limit(oldLimit);
             inputBuf.flip();
 
-            // Generate IV and encrypt
-            byte[] segmentIv = generateSegmentIv(segmentIndex, key);
+            // Generate IV: SHA-512(salt + LE32(segmentIndex))[0:16]
+            sha512.reset();
+            sha512.update(key);
+            ivIndexBuf.clear();
+            ivIndexBuf.putInt(segmentIndex);
+            ivIndexBuf.flip();
+            sha512.update(ivIndexBuf);
+            byte[] hash = sha512.digest();
+            System.arraycopy(hash, 0, ivBuffer, 0, 16);
+
             encryptBuf.clear();
-            AesCipher.encrypt(cipher, inputBuf, encryptBuf, key, segmentIv);
+            aesCipher.encrypt(inputBuf, encryptBuf, ivBuffer);
 
             // Copy to output
             encryptBuf.flip();
@@ -174,18 +177,6 @@ public final class AgileEncryptor {
 
         output.flip();
         return output;
-    }
-
-    private byte[] generateSegmentIv(int segmentIndex, byte[] salt) {
-        // IV = SHA-512(salt + LE32(segmentIndex))[0:16]
-        sha512.reset();
-        sha512.update(salt);
-        ivIndexBuf.clear();
-        ivIndexBuf.putInt(segmentIndex);
-        ivIndexBuf.flip();
-        sha512.update(ivIndexBuf);
-        byte[] hash = sha512.digest();
-        return Arrays.copyOf(hash, 16);
     }
 
     private String buildEncryptionInfoXml(

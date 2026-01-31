@@ -737,9 +737,8 @@ final class XlsxWriter implements Closeable {
             com.beingidly.litexl.crypto.KeyDerivation.BLOCK_KEY_ENCRYPTED_KEY
         );
 
-        byte[] encryptedKey = com.beingidly.litexl.crypto.AesCipher.encrypt(
-            encryptionKey, keyDerivedKey, encryptedKeySalt
-        );
+        byte[] encryptedKey = new com.beingidly.litexl.crypto.AesCipher(keyDerivedKey)
+            .encrypt(encryptionKey, encryptedKeySalt);
 
         // Generate and encrypt verifier
         byte[] verifierInput = new byte[16];
@@ -749,9 +748,8 @@ final class XlsxWriter implements Closeable {
             encryptionOptions.password(), encryptedKeySalt, encryptionOptions.spinCount(), keyBits,
             com.beingidly.litexl.crypto.KeyDerivation.BLOCK_KEY_VERIFIER_INPUT
         );
-        byte[] encryptedVerifierInput = com.beingidly.litexl.crypto.AesCipher.encrypt(
-            verifierInput, verifierInputKey, encryptedKeySalt
-        );
+        byte[] encryptedVerifierInput = new com.beingidly.litexl.crypto.AesCipher(verifierInputKey)
+            .encrypt(verifierInput, encryptedKeySalt);
 
         java.security.MessageDigest sha512 = java.security.MessageDigest.getInstance("SHA-512");
         byte[] verifierHash = sha512.digest(verifierInput);
@@ -760,24 +758,23 @@ final class XlsxWriter implements Closeable {
             encryptionOptions.password(), encryptedKeySalt, encryptionOptions.spinCount(), keyBits,
             com.beingidly.litexl.crypto.KeyDerivation.BLOCK_KEY_VERIFIER_VALUE
         );
-        byte[] encryptedVerifierHash = com.beingidly.litexl.crypto.AesCipher.encryptNoPadding(
-            verifierHash, verifierHashKey, encryptedKeySalt
-        );
+        byte[] encryptedVerifierHash = new com.beingidly.litexl.crypto.AesCipher(verifierHashKey)
+            .encryptNoPadding(verifierHash, encryptedKeySalt);
 
         // For HMAC placeholder (MS Office doesn't strictly verify HMAC)
         byte[] hmacKey = new byte[64];
         random.nextBytes(hmacKey);
 
+        com.beingidly.litexl.crypto.AesCipher hmacCipher = new com.beingidly.litexl.crypto.AesCipher(encryptionKey);
+
         byte[] hmacKeyIv = deriveHmacIv(keyDataSalt,
             com.beingidly.litexl.crypto.KeyDerivation.BLOCK_KEY_DATA_INTEGRITY_HMAC_KEY);
-        byte[] encryptedHmacKey = com.beingidly.litexl.crypto.AesCipher.encryptNoPadding(
-            hmacKey, encryptionKey, hmacKeyIv);
+        byte[] encryptedHmacKey = hmacCipher.encryptNoPadding(hmacKey, hmacKeyIv);
 
         byte[] placeholderHmac = new byte[64];
         byte[] hmacValueIv = deriveHmacIv(keyDataSalt,
             com.beingidly.litexl.crypto.KeyDerivation.BLOCK_KEY_DATA_INTEGRITY_HMAC_VALUE);
-        byte[] encryptedHmacValue = com.beingidly.litexl.crypto.AesCipher.encryptNoPadding(
-            placeholderHmac, encryptionKey, hmacValueIv);
+        byte[] encryptedHmacValue = hmacCipher.encryptNoPadding(placeholderHmac, hmacValueIv);
 
         byte[] encryptionInfo = buildEncryptionInfo(
             keyBits, keyDataSalt, encryptedKeySalt, encryptionOptions.spinCount(),

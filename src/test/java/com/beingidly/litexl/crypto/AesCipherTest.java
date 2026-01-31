@@ -2,7 +2,6 @@ package com.beingidly.litexl.crypto;
 
 import org.junit.jupiter.api.Test;
 
-import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -22,8 +21,9 @@ class AesCipherTest {
 
         byte[] plaintext = "Hello, World!!!".getBytes(); // 16 bytes (1 block)
 
-        byte[] ciphertext = AesCipher.encrypt(plaintext, key, iv);
-        byte[] decrypted = AesCipher.decrypt(ciphertext, key, iv);
+        AesCipher cipher = new AesCipher(key);
+        byte[] ciphertext = cipher.encrypt(plaintext, iv);
+        byte[] decrypted = cipher.decrypt(ciphertext, iv);
 
         assertArrayEquals(plaintext, Arrays.copyOf(decrypted, plaintext.length));
     }
@@ -38,8 +38,9 @@ class AesCipherTest {
 
         byte[] plaintext = "Hello, World!!!".getBytes();
 
-        byte[] ciphertext = AesCipher.encrypt(plaintext, key, iv);
-        byte[] decrypted = AesCipher.decrypt(ciphertext, key, iv);
+        AesCipher cipher = new AesCipher(key);
+        byte[] ciphertext = cipher.encrypt(plaintext, iv);
+        byte[] decrypted = cipher.decrypt(ciphertext, iv);
 
         assertArrayEquals(plaintext, Arrays.copyOf(decrypted, plaintext.length));
     }
@@ -51,7 +52,7 @@ class AesCipherTest {
 
         byte[] plaintext = "Short".getBytes(); // Less than 16 bytes
 
-        byte[] ciphertext = AesCipher.encrypt(plaintext, key, iv);
+        byte[] ciphertext = new AesCipher(key).encrypt(plaintext, iv);
 
         // Ciphertext should be padded to 16 bytes (one block)
         assertEquals(16, ciphertext.length);
@@ -65,7 +66,7 @@ class AesCipherTest {
         byte[] plaintext = new byte[33]; // > 2 blocks
         Arrays.fill(plaintext, (byte) 'A');
 
-        byte[] ciphertext = AesCipher.encrypt(plaintext, key, iv);
+        byte[] ciphertext = new AesCipher(key).encrypt(plaintext, iv);
 
         // Should be 48 bytes (3 blocks)
         assertEquals(48, ciphertext.length);
@@ -80,8 +81,8 @@ class AesCipherTest {
         byte[] iv = new byte[16];
         byte[] plaintext = "Test message".getBytes();
 
-        byte[] ciphertext1 = AesCipher.encrypt(plaintext, key1, iv);
-        byte[] ciphertext2 = AesCipher.encrypt(plaintext, key2, iv);
+        byte[] ciphertext1 = new AesCipher(key1).encrypt(plaintext, iv);
+        byte[] ciphertext2 = new AesCipher(key2).encrypt(plaintext, iv);
 
         assertFalse(Arrays.equals(ciphertext1, ciphertext2));
     }
@@ -96,8 +97,9 @@ class AesCipherTest {
 
         byte[] plaintext = "Test message".getBytes();
 
-        byte[] ciphertext1 = AesCipher.encrypt(plaintext, key, iv1);
-        byte[] ciphertext2 = AesCipher.encrypt(plaintext, key, iv2);
+        AesCipher cipher = new AesCipher(key);
+        byte[] ciphertext1 = cipher.encrypt(plaintext, iv1);
+        byte[] ciphertext2 = cipher.encrypt(plaintext, iv2);
 
         assertFalse(Arrays.equals(ciphertext1, ciphertext2));
     }
@@ -109,7 +111,7 @@ class AesCipherTest {
         byte[] data = "Test".getBytes();
 
         assertThrows(GeneralSecurityException.class, () ->
-            AesCipher.encrypt(data, key, iv)
+            new AesCipher(key).encrypt(data, iv)
         );
     }
 
@@ -120,7 +122,7 @@ class AesCipherTest {
         byte[] data = "Test".getBytes();
 
         assertThrows(GeneralSecurityException.class, () ->
-            AesCipher.encrypt(data, key, iv)
+            new AesCipher(key).encrypt(data, iv)
         );
     }
 
@@ -135,7 +137,8 @@ class AesCipherTest {
         ByteBuffer input = ByteBuffer.wrap(plaintext);
         ByteBuffer output = ByteBuffer.allocate(32);
 
-        int written = AesCipher.encrypt(input, output, key, iv);
+        AesCipher cipher = new AesCipher(key);
+        int written = cipher.encrypt(input, output, iv);
 
         assertTrue(written > 0);
         assertEquals(16, written);
@@ -144,7 +147,7 @@ class AesCipherTest {
         // Verify by decrypting
         byte[] encrypted = new byte[written];
         output.get(encrypted);
-        byte[] decrypted = AesCipher.decrypt(encrypted, key, iv);
+        byte[] decrypted = cipher.decrypt(encrypted, iv);
         assertArrayEquals(plaintext, Arrays.copyOf(decrypted, plaintext.length));
     }
 
@@ -155,13 +158,15 @@ class AesCipherTest {
         Arrays.fill(key, (byte) 0x01);
         Arrays.fill(iv, (byte) 0x02);
 
+        AesCipher cipher = new AesCipher(key);
+
         byte[] plaintext = "Hello, World!!!X".getBytes(StandardCharsets.UTF_8);
-        byte[] encrypted = AesCipher.encrypt(plaintext, key, iv);
+        byte[] encrypted = cipher.encrypt(plaintext, iv);
 
         ByteBuffer input = ByteBuffer.wrap(encrypted);
         ByteBuffer output = ByteBuffer.allocate(encrypted.length);
 
-        int written = AesCipher.decrypt(input, output, key, iv);
+        int written = cipher.decrypt(input, output, iv);
 
         assertEquals(encrypted.length, written);
         output.flip();
@@ -172,46 +177,40 @@ class AesCipherTest {
 
     @Test
     void encryptDecryptWithReusedCipher() throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
-
         byte[] key = new byte[16];
         byte[] iv = new byte[16];
         Arrays.fill(key, (byte) 0x42);
         Arrays.fill(iv, (byte) 0x24);
 
+        AesCipher cipher = new AesCipher(key);
+
         // First encrypt/decrypt cycle
         byte[] plaintext1 = "Hello, World!!!".getBytes(StandardCharsets.UTF_8);
-        byte[] ciphertext1 = AesCipher.encrypt(cipher, plaintext1, key, iv);
-        byte[] decrypted1 = AesCipher.decrypt(cipher, ciphertext1, key, iv);
+        byte[] ciphertext1 = cipher.encrypt(plaintext1, iv);
+        byte[] decrypted1 = cipher.decrypt(ciphertext1, iv);
         assertArrayEquals(plaintext1, Arrays.copyOf(decrypted1, plaintext1.length));
 
-        // Second encrypt/decrypt cycle with same Cipher instance
+        // Second encrypt/decrypt cycle with same AesCipher instance
         byte[] plaintext2 = "Goodbye, World!".getBytes(StandardCharsets.UTF_8);
-        byte[] ciphertext2 = AesCipher.encrypt(cipher, plaintext2, key, iv);
-        byte[] decrypted2 = AesCipher.decrypt(cipher, ciphertext2, key, iv);
+        byte[] ciphertext2 = cipher.encrypt(plaintext2, iv);
+        byte[] decrypted2 = cipher.decrypt(ciphertext2, iv);
         assertArrayEquals(plaintext2, Arrays.copyOf(decrypted2, plaintext2.length));
-
-        // Verify results match non-reused Cipher methods
-        byte[] expected1 = AesCipher.encrypt(plaintext1, key, iv);
-        byte[] expected2 = AesCipher.encrypt(plaintext2, key, iv);
-        assertArrayEquals(expected1, ciphertext1);
-        assertArrayEquals(expected2, ciphertext2);
     }
 
     @Test
     void encryptDecryptWithReusedCipherByteBuffer() throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
-
         byte[] key = new byte[16];
         byte[] iv = new byte[16];
         Arrays.fill(key, (byte) 0x01);
         Arrays.fill(iv, (byte) 0x02);
 
+        AesCipher cipher = new AesCipher(key);
+
         // First encrypt/decrypt cycle with ByteBuffer
         byte[] plaintext1 = "Hello, World!!!X".getBytes(StandardCharsets.UTF_8); // 16 bytes
         ByteBuffer input1 = ByteBuffer.wrap(plaintext1);
         ByteBuffer output1 = ByteBuffer.allocate(32);
-        int written1 = AesCipher.encrypt(cipher, input1, output1, key, iv);
+        int written1 = cipher.encrypt(input1, output1, iv);
         assertEquals(16, written1);
         output1.flip();
 
@@ -219,17 +218,17 @@ class AesCipherTest {
         decryptInput1.put(output1);
         decryptInput1.flip();
         ByteBuffer decryptOutput1 = ByteBuffer.allocate(32);
-        int decrypted1 = AesCipher.decrypt(cipher, decryptInput1, decryptOutput1, key, iv);
+        int decrypted1 = cipher.decrypt(decryptInput1, decryptOutput1, iv);
         decryptOutput1.flip();
         byte[] result1 = new byte[decrypted1];
         decryptOutput1.get(result1);
         assertArrayEquals(plaintext1, Arrays.copyOf(result1, plaintext1.length));
 
-        // Second encrypt/decrypt cycle with same Cipher instance
+        // Second encrypt/decrypt cycle with same AesCipher instance
         byte[] plaintext2 = "Goodbye, World!!".getBytes(StandardCharsets.UTF_8); // 16 bytes
         ByteBuffer input2 = ByteBuffer.wrap(plaintext2);
         ByteBuffer output2 = ByteBuffer.allocate(32);
-        int written2 = AesCipher.encrypt(cipher, input2, output2, key, iv);
+        int written2 = cipher.encrypt(input2, output2, iv);
         assertEquals(16, written2);
         output2.flip();
 
@@ -237,7 +236,7 @@ class AesCipherTest {
         decryptInput2.put(output2);
         decryptInput2.flip();
         ByteBuffer decryptOutput2 = ByteBuffer.allocate(32);
-        int decrypted2 = AesCipher.decrypt(cipher, decryptInput2, decryptOutput2, key, iv);
+        int decrypted2 = cipher.decrypt(decryptInput2, decryptOutput2, iv);
         decryptOutput2.flip();
         byte[] result2 = new byte[decrypted2];
         decryptOutput2.get(result2);
@@ -246,32 +245,28 @@ class AesCipherTest {
 
     @Test
     void encryptDecryptWithReusedCipherOffsetLength() throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
-
         byte[] key = new byte[16];
         byte[] iv = new byte[16];
         Arrays.fill(key, (byte) 0x42);
         Arrays.fill(iv, (byte) 0x24);
+
+        AesCipher cipher = new AesCipher(key);
 
         // Data with offset
         byte[] data = "PREFIXHello, World!!!SUFFIX".getBytes(StandardCharsets.UTF_8);
         int offset = 6; // Skip "PREFIX"
         int length = 15; // "Hello, World!!!"
 
-        // Encrypt with offset/length using reused Cipher
-        byte[] ciphertext = AesCipher.encrypt(cipher, data, offset, length, key, iv);
+        // Encrypt with offset/length
+        byte[] ciphertext = cipher.encrypt(data, offset, length, iv);
 
-        // Decrypt using reused Cipher
-        byte[] decrypted = AesCipher.decrypt(cipher, ciphertext, key, iv);
+        // Decrypt
+        byte[] decrypted = cipher.decrypt(ciphertext, iv);
 
         // Verify
         byte[] expected = new byte[length];
         System.arraycopy(data, offset, expected, 0, length);
         assertArrayEquals(expected, Arrays.copyOf(decrypted, length));
-
-        // Verify matches non-reused method
-        byte[] expectedCiphertext = AesCipher.encrypt(data, offset, length, key, iv);
-        assertArrayEquals(expectedCiphertext, ciphertext);
     }
 
     @Test
@@ -284,8 +279,9 @@ class AesCipherTest {
 
         byte[] plaintext = "Hello, World!!!".getBytes(StandardCharsets.UTF_8);
 
-        byte[] ciphertext = AesCipher.encrypt(plaintext, key, iv);
-        byte[] decrypted = AesCipher.decrypt(ciphertext, key, iv);
+        AesCipher cipher = new AesCipher(key);
+        byte[] ciphertext = cipher.encrypt(plaintext, iv);
+        byte[] decrypted = cipher.decrypt(ciphertext, iv);
 
         assertArrayEquals(plaintext, Arrays.copyOf(decrypted, plaintext.length));
     }
@@ -297,37 +293,17 @@ class AesCipherTest {
         Arrays.fill(key, (byte) 0x42);
         Arrays.fill(iv, (byte) 0x24);
 
+        AesCipher cipher = new AesCipher(key);
+
         byte[] plaintext = "Hello, World!!!X".getBytes(StandardCharsets.UTF_8); // 16 bytes
-        byte[] ciphertext = AesCipher.encrypt(plaintext, key, iv);
+        byte[] ciphertext = cipher.encrypt(plaintext, iv);
 
         // Embed ciphertext in larger array
         byte[] paddedCiphertext = new byte[ciphertext.length + 20];
         System.arraycopy(ciphertext, 0, paddedCiphertext, 10, ciphertext.length);
 
         // Decrypt with offset/length
-        byte[] decrypted = AesCipher.decrypt(paddedCiphertext, 10, ciphertext.length, key, iv);
-
-        assertArrayEquals(plaintext, Arrays.copyOf(decrypted, plaintext.length));
-    }
-
-    @Test
-    void decryptWithReusedCipherOffsetLength() throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
-
-        byte[] key = new byte[16];
-        byte[] iv = new byte[16];
-        Arrays.fill(key, (byte) 0x42);
-        Arrays.fill(iv, (byte) 0x24);
-
-        byte[] plaintext = "Hello, World!!!X".getBytes(StandardCharsets.UTF_8); // 16 bytes
-        byte[] ciphertext = AesCipher.encrypt(cipher, plaintext, key, iv);
-
-        // Embed ciphertext in larger array
-        byte[] paddedCiphertext = new byte[ciphertext.length + 20];
-        System.arraycopy(ciphertext, 0, paddedCiphertext, 10, ciphertext.length);
-
-        // Decrypt with offset/length using reused Cipher
-        byte[] decrypted = AesCipher.decrypt(cipher, paddedCiphertext, 10, ciphertext.length, key, iv);
+        byte[] decrypted = cipher.decrypt(paddedCiphertext, 10, ciphertext.length, iv);
 
         assertArrayEquals(plaintext, Arrays.copyOf(decrypted, plaintext.length));
     }
@@ -343,12 +319,13 @@ class AesCipherTest {
         byte[] plaintext = "Hello, World!!!XHello, World!!!X".getBytes(StandardCharsets.UTF_8);
         assertEquals(32, plaintext.length);
 
-        byte[] ciphertext = AesCipher.encryptNoPadding(plaintext, key, iv);
+        AesCipher cipher = new AesCipher(key);
+        byte[] ciphertext = cipher.encryptNoPadding(plaintext, iv);
 
         assertEquals(32, ciphertext.length);
 
         // Verify decryption
-        byte[] decrypted = AesCipher.decrypt(ciphertext, key, iv);
+        byte[] decrypted = cipher.decrypt(ciphertext, iv);
         assertArrayEquals(plaintext, decrypted);
     }
 
@@ -360,7 +337,7 @@ class AesCipherTest {
         byte[] plaintext = "NotAligned".getBytes(StandardCharsets.UTF_8); // 10 bytes
 
         assertThrows(IllegalArgumentException.class, () ->
-            AesCipher.encryptNoPadding(plaintext, key, iv)
+            new AesCipher(key).encryptNoPadding(plaintext, iv)
         );
     }
 
@@ -371,7 +348,7 @@ class AesCipherTest {
 
         byte[] plaintext = new byte[0];
 
-        byte[] ciphertext = AesCipher.encrypt(plaintext, key, iv);
+        byte[] ciphertext = new AesCipher(key).encrypt(plaintext, iv);
 
         // Empty data pads to 0 bytes (no block needed)
         assertEquals(0, ciphertext.length);
@@ -388,13 +365,14 @@ class AesCipherTest {
         byte[] plaintext = "0123456789ABCDEF".getBytes(StandardCharsets.UTF_8);
         assertEquals(16, plaintext.length);
 
-        byte[] ciphertext = AesCipher.encrypt(plaintext, key, iv);
+        AesCipher cipher = new AesCipher(key);
+        byte[] ciphertext = cipher.encrypt(plaintext, iv);
 
         // Should stay at 16 bytes (no extra padding block)
         assertEquals(16, ciphertext.length);
 
         // Verify roundtrip
-        byte[] decrypted = AesCipher.decrypt(ciphertext, key, iv);
+        byte[] decrypted = cipher.decrypt(ciphertext, iv);
         assertArrayEquals(plaintext, decrypted);
     }
 
@@ -409,13 +387,14 @@ class AesCipherTest {
         byte[] plaintext = "0123456789ABCDEF0123456789ABCDEF".getBytes(StandardCharsets.UTF_8);
         assertEquals(32, plaintext.length);
 
-        byte[] ciphertext = AesCipher.encrypt(plaintext, key, iv);
+        AesCipher cipher = new AesCipher(key);
+        byte[] ciphertext = cipher.encrypt(plaintext, iv);
 
         // Should stay at 32 bytes
         assertEquals(32, ciphertext.length);
 
         // Verify roundtrip
-        byte[] decrypted = AesCipher.decrypt(ciphertext, key, iv);
+        byte[] decrypted = cipher.decrypt(ciphertext, iv);
         assertArrayEquals(plaintext, decrypted);
     }
 
@@ -428,7 +407,7 @@ class AesCipherTest {
         byte[] plaintext = "0123456789ABCDEFX".getBytes(StandardCharsets.UTF_8);
         assertEquals(17, plaintext.length);
 
-        byte[] ciphertext = AesCipher.encrypt(plaintext, key, iv);
+        byte[] ciphertext = new AesCipher(key).encrypt(plaintext, iv);
 
         assertEquals(32, ciphertext.length);
     }
@@ -447,7 +426,8 @@ class AesCipherTest {
         ByteBuffer input = ByteBuffer.wrap(plaintext);
         ByteBuffer output = ByteBuffer.allocate(32);
 
-        int written = AesCipher.encrypt(input, output, key, iv);
+        AesCipher cipher = new AesCipher(key);
+        int written = cipher.encrypt(input, output, iv);
 
         assertEquals(16, written); // Padded to 16 bytes
         output.flip();
@@ -455,35 +435,7 @@ class AesCipherTest {
         // Verify by decrypting
         byte[] encrypted = new byte[written];
         output.get(encrypted);
-        byte[] decrypted = AesCipher.decrypt(encrypted, key, iv);
-        assertArrayEquals(plaintext, Arrays.copyOf(decrypted, plaintext.length));
-    }
-
-    @Test
-    void encryptByteBufferWithReusedCipherAndPadding() throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
-
-        byte[] key = new byte[16];
-        byte[] iv = new byte[16];
-        Arrays.fill(key, (byte) 0x01);
-        Arrays.fill(iv, (byte) 0x02);
-
-        // 10 bytes - needs padding to 16
-        byte[] plaintext = "HelloWorld".getBytes(StandardCharsets.UTF_8);
-        assertEquals(10, plaintext.length);
-
-        ByteBuffer input = ByteBuffer.wrap(plaintext);
-        ByteBuffer output = ByteBuffer.allocate(32);
-
-        int written = AesCipher.encrypt(cipher, input, output, key, iv);
-
-        assertEquals(16, written); // Padded to 16 bytes
-        output.flip();
-
-        // Verify by decrypting
-        byte[] encrypted = new byte[written];
-        output.get(encrypted);
-        byte[] decrypted = AesCipher.decrypt(cipher, encrypted, key, iv);
+        byte[] decrypted = cipher.decrypt(encrypted, iv);
         assertArrayEquals(plaintext, Arrays.copyOf(decrypted, plaintext.length));
     }
 
@@ -499,13 +451,14 @@ class AesCipherTest {
         int offset = 3;
         int length = 5; // "Hello"
 
-        byte[] ciphertext = AesCipher.encrypt(fullData, offset, length, key, iv);
+        AesCipher cipher = new AesCipher(key);
+        byte[] ciphertext = cipher.encrypt(fullData, offset, length, iv);
 
         // Should be padded to 16 bytes
         assertEquals(16, ciphertext.length);
 
         // Decrypt and verify
-        byte[] decrypted = AesCipher.decrypt(ciphertext, key, iv);
+        byte[] decrypted = cipher.decrypt(ciphertext, iv);
         byte[] expected = "Hello".getBytes(StandardCharsets.UTF_8);
         assertArrayEquals(expected, Arrays.copyOf(decrypted, expected.length));
     }
@@ -522,13 +475,41 @@ class AesCipherTest {
         Arrays.fill(key192, (byte) 0x42);
         Arrays.fill(key256, (byte) 0x42);
 
-        byte[] ciphertext128 = AesCipher.encrypt(plaintext, key128, iv);
-        byte[] ciphertext192 = AesCipher.encrypt(plaintext, key192, iv);
-        byte[] ciphertext256 = AesCipher.encrypt(plaintext, key256, iv);
+        byte[] ciphertext128 = new AesCipher(key128).encrypt(plaintext, iv);
+        byte[] ciphertext192 = new AesCipher(key192).encrypt(plaintext, iv);
+        byte[] ciphertext256 = new AesCipher(key256).encrypt(plaintext, iv);
 
         // All should be different
         assertFalse(Arrays.equals(ciphertext128, ciphertext192));
         assertFalse(Arrays.equals(ciphertext128, ciphertext256));
         assertFalse(Arrays.equals(ciphertext192, ciphertext256));
+    }
+
+    @Test
+    void cipherInstanceReuse() throws GeneralSecurityException {
+        byte[] key = new byte[16];
+        byte[] iv1 = new byte[16];
+        byte[] iv2 = new byte[16];
+        Arrays.fill(key, (byte) 0x42);
+        Arrays.fill(iv1, (byte) 0x24);
+        Arrays.fill(iv2, (byte) 0x48);
+
+        byte[] plaintext = "Hello, World!!!".getBytes(StandardCharsets.UTF_8);
+
+        // Single AesCipher instance reused with different IVs
+        AesCipher cipher = new AesCipher(key);
+
+        byte[] ciphertext1 = cipher.encrypt(plaintext, iv1);
+        byte[] ciphertext2 = cipher.encrypt(plaintext, iv2);
+
+        // Different IVs should produce different ciphertext
+        assertFalse(Arrays.equals(ciphertext1, ciphertext2));
+
+        // Both should decrypt correctly
+        byte[] decrypted1 = cipher.decrypt(ciphertext1, iv1);
+        byte[] decrypted2 = cipher.decrypt(ciphertext2, iv2);
+
+        assertArrayEquals(plaintext, Arrays.copyOf(decrypted1, plaintext.length));
+        assertArrayEquals(plaintext, Arrays.copyOf(decrypted2, plaintext.length));
     }
 }
