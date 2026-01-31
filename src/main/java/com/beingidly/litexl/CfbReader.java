@@ -1,6 +1,5 @@
-package com.beingidly.litexl.crypto;
+package com.beingidly.litexl;
 
-import com.beingidly.litexl.CorruptFileException;
 import org.jspecify.annotations.Nullable;
 
 import java.io.*;
@@ -23,7 +22,7 @@ import java.util.*;
  *   <li>Stream data returned as ByteBuffer slices when possible</li>
  * </ul>
  */
-public final class CfbReader implements Closeable {
+final class CfbReader implements Closeable {
 
     // Note: MS spec says B2 but POI uses B1
     private static final byte[] CFB_SIGNATURE = {

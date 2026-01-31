@@ -1,7 +1,6 @@
 package com.beingidly.litexl;
 
 import com.beingidly.litexl.crypto.AgileDecryptor;
-import com.beingidly.litexl.crypto.CfbReader;
 
 import org.jspecify.annotations.Nullable;
 

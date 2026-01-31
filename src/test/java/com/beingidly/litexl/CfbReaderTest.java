@@ -1,6 +1,4 @@
-package com.beingidly.litexl.crypto;
-
-import com.beingidly.litexl.CorruptFileException;
+package com.beingidly.litexl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

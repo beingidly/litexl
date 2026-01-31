@@ -1,6 +1,5 @@
 package com.beingidly.litexl;
 
-import com.beingidly.litexl.crypto.CfbWriter;
 import com.beingidly.litexl.crypto.EncryptionOptions;
 import com.beingidly.litexl.crypto.SheetHasher;
 import com.beingidly.litexl.format.*;
@@ -8,8 +7,11 @@ import com.beingidly.litexl.style.*;
 import org.jspecify.annotations.Nullable;
 
 import java.io.*;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.security.GeneralSecurityException;
 import java.util.Map;
 import java.util.Objects;
@@ -628,14 +630,14 @@ final class XlsxWriter implements Closeable {
     }
 
     /**
-     * Writes an encrypted workbook using streaming encryption.
-     * Memory usage is O(1) regardless of file size - only ~4KB metadata is buffered.
+     * Writes an encrypted workbook using MappedByteBuffer.
+     * No heap/direct buffer allocation - uses OS page cache directly.
      */
     private void writeEncrypted() throws IOException {
         // First, write the unencrypted XLSX to a temp file
-        Path tempFile = Files.createTempFile("litexl-", ".xlsx");
+        Path xlsxTempFile = Files.createTempFile("litexl-", ".xlsx");
         try {
-            try (ZipWriter zip = new ZipWriter(tempFile)) {
+            try (ZipWriter zip = new ZipWriter(xlsxTempFile)) {
                 writeContentTypes(zip);
                 writeRootRels(zip);
                 writeWorkbookRels(zip);
@@ -646,37 +648,77 @@ final class XlsxWriter implements Closeable {
                 }
             }
 
-            // Get the plain XLSX size (needed for CFB structure calculation)
-            long xlsxSize = Files.size(tempFile);
+            long xlsxSize = Files.size(xlsxTempFile);
 
             try {
-                // Generate encryption components
-                writeAsCfbStreaming(tempFile, xlsxSize, getOutputStream());
+                if (path != null) {
+                    // Path-based: write directly to final file via FileChannel
+                    writeAsCfbDirect(xlsxTempFile, xlsxSize, path);
+                } else {
+                    // OutputStream-based: write to temp CFB file, then transferTo
+                    assert outputStream != null;
+                    writeAsCfbToStream(xlsxTempFile, xlsxSize, outputStream);
+                }
             } catch (GeneralSecurityException e) {
                 throw new IOException("Encryption failed", e);
             }
 
         } finally {
-            Files.deleteIfExists(tempFile);
+            Files.deleteIfExists(xlsxTempFile);
         }
-    }
-
-    private OutputStream getOutputStream() throws IOException {
-        if (outputStream != null) {
-            return outputStream;
-        }
-        assert path != null : "path must be set when outputStream is null";
-        return Files.newOutputStream(path);
     }
 
     /**
-     * Writes the workbook as an encrypted CFB file using streaming.
-     * Memory usage is O(1) - only encryption metadata and 4KB segment buffers are allocated.
+     * Writes encrypted CFB directly to the destination file via FileChannel + MappedByteBuffer.
      */
-    private void writeAsCfbStreaming(Path xlsxTempFile, long xlsxSize, OutputStream out) throws IOException, GeneralSecurityException {
+    private void writeAsCfbDirect(Path xlsxTempFile, long xlsxSize, Path destPath) throws IOException, GeneralSecurityException {
+        byte[][] encryptionData = generateEncryptionData();
+        byte[] encryptionInfo = encryptionData[0];
+        byte[] encryptionKey = encryptionData[1];
+        byte[] keyDataSalt = encryptionData[2];
+
+        try (InputStream xlsxIn = Files.newInputStream(xlsxTempFile);
+             FileChannel fc = FileChannel.open(destPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+             CfbWriter cfbWriter = new CfbWriter(fc, encryptionInfo, encryptionKey, keyDataSalt)) {
+
+            cfbWriter.writeEncrypted(xlsxIn, xlsxSize);
+        }
+    }
+
+    /**
+     * Writes encrypted CFB to a temp file, then transfers to OutputStream.
+     */
+    private void writeAsCfbToStream(Path xlsxTempFile, long xlsxSize, OutputStream out) throws IOException, GeneralSecurityException {
+        byte[][] encryptionData = generateEncryptionData();
+        byte[] encryptionInfo = encryptionData[0];
+        byte[] encryptionKey = encryptionData[1];
+        byte[] keyDataSalt = encryptionData[2];
+
+        Path cfbTempFile = Files.createTempFile("litexl-cfb-", ".tmp");
+        try {
+            // Write to temp CFB file via MappedByteBuffer
+            try (InputStream xlsxIn = Files.newInputStream(xlsxTempFile);
+                 FileChannel fc = FileChannel.open(cfbTempFile, StandardOpenOption.WRITE, StandardOpenOption.READ, StandardOpenOption.CREATE);
+                 CfbWriter cfbWriter = new CfbWriter(fc, encryptionInfo, encryptionKey, keyDataSalt)) {
+
+                cfbWriter.writeEncrypted(xlsxIn, xlsxSize);
+            }
+
+            // Transfer to OutputStream via NIO (zero-copy when possible)
+            try (FileChannel fc = FileChannel.open(cfbTempFile, StandardOpenOption.READ)) {
+                fc.transferTo(0, fc.size(), Channels.newChannel(out));
+            }
+        } finally {
+            Files.deleteIfExists(cfbTempFile);
+        }
+    }
+
+    /**
+     * Generates encryption components and returns [encryptionInfo, encryptionKey, keyDataSalt].
+     */
+    private byte[][] generateEncryptionData() throws GeneralSecurityException, IOException {
         assert encryptionOptions != null : "encryptionOptions must be set";
 
-        // Generate encryption components
         java.security.SecureRandom random = new java.security.SecureRandom();
         int keyBits = encryptionOptions.algorithm() == EncryptionOptions.Algorithm.AES_256 ? 256 : 128;
 
@@ -722,22 +764,15 @@ final class XlsxWriter implements Closeable {
             verifierHash, verifierHashKey, encryptedKeySalt
         );
 
-        // For HMAC, we need to compute it over the encrypted data.
-        // Since we're streaming, we'll use a streaming HMAC approach.
+        // For HMAC placeholder (MS Office doesn't strictly verify HMAC)
         byte[] hmacKey = new byte[64];
         random.nextBytes(hmacKey);
 
-        // Build encryption info (this is small, ~1KB)
-        // Note: HMAC values will be computed during streaming and updated
-        // For now, we use placeholder - but MS Office doesn't strictly verify HMAC
-        // A proper implementation would require two passes or a seekable output
         byte[] hmacKeyIv = deriveHmacIv(keyDataSalt,
             com.beingidly.litexl.crypto.KeyDerivation.BLOCK_KEY_DATA_INTEGRITY_HMAC_KEY);
         byte[] encryptedHmacKey = com.beingidly.litexl.crypto.AesCipher.encryptNoPadding(
             hmacKey, encryptionKey, hmacKeyIv);
 
-        // Placeholder HMAC value (64 bytes of zeros, encrypted)
-        // POI and Excel tolerate missing/invalid HMAC for password-protected files
         byte[] placeholderHmac = new byte[64];
         byte[] hmacValueIv = deriveHmacIv(keyDataSalt,
             com.beingidly.litexl.crypto.KeyDerivation.BLOCK_KEY_DATA_INTEGRITY_HMAC_VALUE);
@@ -750,12 +785,7 @@ final class XlsxWriter implements Closeable {
             encryptedHmacKey, encryptedHmacValue
         );
 
-        // Stream: read XLSX -> encrypt -> write CFB
-        try (InputStream xlsxIn = Files.newInputStream(xlsxTempFile);
-             CfbWriter cfbWriter = new CfbWriter(out, encryptionInfo, encryptionKey, keyDataSalt)) {
-
-            cfbWriter.writeEncrypted(xlsxIn, xlsxSize);
-        }
+        return new byte[][] { encryptionInfo, encryptionKey, keyDataSalt };
     }
 
     private byte[] deriveHmacIv(byte[] salt, byte[] blockKey) throws GeneralSecurityException {

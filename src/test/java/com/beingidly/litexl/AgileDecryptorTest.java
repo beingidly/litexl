@@ -1,6 +1,6 @@
-package com.beingidly.litexl.crypto;
+package com.beingidly.litexl;
 
-import com.beingidly.litexl.InvalidPasswordException;
+import com.beingidly.litexl.crypto.AgileDecryptor;
 import org.junit.jupiter.api.Test;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;

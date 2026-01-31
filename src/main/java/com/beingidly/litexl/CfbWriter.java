@@ -1,9 +1,12 @@
-package com.beingidly.litexl.crypto;
+package com.beingidly.litexl;
+
+import com.beingidly.litexl.crypto.AesCipher;
 
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.channels.Channels;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import javax.crypto.Cipher;
@@ -19,7 +22,7 @@ import javax.crypto.Cipher;
  * }
  * }</pre>
  */
-public final class CfbWriter implements Closeable {
+final class CfbWriter implements Closeable {
 
     // Reusable zero buffer for padding operations
     private static final byte[] ZERO_BUFFER = new byte[4096];
@@ -170,19 +173,13 @@ public final class CfbWriter implements Closeable {
 
     private static final int SEGMENT_SIZE = 4096;
     private static final int BLOCK_SIZE = 16;
-    private static final int MAX_PADDED_LEN = ((SEGMENT_SIZE + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE;
 
-    private final OutputStream out;
+    private final FileChannel channel;
     private final byte[] encryptionInfo;
     private final byte[] encryptionKey;
     private final byte[] keyDataSalt;
 
-    // Reusable buffers (allocated once per writer instance, released in close())
-    private final java.nio.channels.WritableByteChannel outChannel;
-    private final ByteBuffer sizeBuf;
-    private final ByteBuffer segmentInputBuf;
-    private final ByteBuffer encryptOutputBuf;
-    private final ByteBuffer indexBuf;
+    // Reusable buffers
     private final byte[] ivBuffer = new byte[16];
     private final byte[] readBuffer = new byte[SEGMENT_SIZE];
     private final Cipher cipher;
@@ -190,23 +187,16 @@ public final class CfbWriter implements Closeable {
     /**
      * Creates a new CFB writer.
      *
-     * @param out the output stream to write to
+     * @param channel the file channel to write to
      * @param encryptionInfo the encryption info XML with header
      * @param encryptionKey the AES encryption key
      * @param keyDataSalt the salt for IV generation
      */
-    public CfbWriter(OutputStream out, byte[] encryptionInfo, byte[] encryptionKey, byte[] keyDataSalt) {
-        this.out = out;
+    CfbWriter(FileChannel channel, byte[] encryptionInfo, byte[] encryptionKey, byte[] keyDataSalt) {
+        this.channel = channel;
         this.encryptionInfo = encryptionInfo;
         this.encryptionKey = encryptionKey;
         this.keyDataSalt = keyDataSalt;
-        this.outChannel = Channels.newChannel(out);
-
-        // Allocate direct buffers (reused across operations, released in close())
-        this.sizeBuf = ByteBuffer.allocateDirect(8).order(ByteOrder.LITTLE_ENDIAN);
-        this.segmentInputBuf = ByteBuffer.allocateDirect(SEGMENT_SIZE);
-        this.encryptOutputBuf = ByteBuffer.allocateDirect(MAX_PADDED_LEN);
-        this.indexBuf = ByteBuffer.allocateDirect(4).order(ByteOrder.LITTLE_ENDIAN);
         try {
             this.cipher = Cipher.getInstance("AES/CBC/NoPadding");
         } catch (GeneralSecurityException e) {
@@ -215,15 +205,15 @@ public final class CfbWriter implements Closeable {
     }
 
     /**
-     * Writes an encrypted Office document with streaming encryption.
-     * Memory usage is O(1) regardless of file size.
+     * Writes an encrypted Office document using MappedByteBuffer.
+     * No heap/direct buffer allocation - uses OS page cache directly.
      *
      * @param plainDataStream input stream providing plain data
      * @param plainDataSize size of the plain data to encrypt
      * @throws IOException if an I/O error occurs
      * @throws GeneralSecurityException if encryption fails
      */
-    public void writeEncrypted(InputStream plainDataStream, long plainDataSize)
+    void writeEncrypted(InputStream plainDataStream, long plainDataSize)
             throws IOException, GeneralSecurityException {
 
         long encryptedPackageSize = calculateEncryptedPackageSize(plainDataSize);
@@ -281,34 +271,34 @@ public final class CfbWriter implements Closeable {
         int firstDir = firstMiniFat + miniFatSectors;
         int firstMiniStream = firstDir + dirSectors;
 
-        // Metadata buffer: header + FAT + miniFAT + directory + mini streams (Direct ByteBuffer)
+        // Calculate total file size and map entire file
         int metadataSize = HEADER_SIZE + (fatSectors + miniFatSectors + dirSectors + miniStreamSectors) * SECTOR_SIZE;
-        ByteBuffer metadataBuffer = ByteBuffer.allocateDirect(metadataSize).order(ByteOrder.LITTLE_ENDIAN);
+        long totalFileSize = metadataSize + (long) encryptedPackageSectors * SECTOR_SIZE;
+        MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_WRITE, 0, totalFileSize);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
 
         // Write header
-        writeHeader(metadataBuffer, fatSectors, firstDir, miniFatSectors, firstMiniFat);
+        writeHeader(buffer, fatSectors, firstDir, miniFatSectors, firstMiniFat);
 
         // Write FAT
         int[] regularStarts = new int[DIR_COUNT];
-        writeFat(metadataBuffer, fatSectors, miniFatSectors, dirSectors,
+        writeFat(buffer, fatSectors, miniFatSectors, dirSectors,
                  miniStreamSectors, encryptedPackageSectors, regularStarts);
 
         // Write Mini FAT and Mini Stream
         int[] miniStarts = new int[DIR_COUNT];
-        writeMiniStream(metadataBuffer, firstMiniFat, firstMiniStream, miniFatSectors,
+        writeMiniStream(buffer, firstMiniFat, firstMiniStream, miniFatSectors,
                         streams, streamSizes, miniStarts);
 
         // Write directory entries
-        writeDirectory(metadataBuffer, firstDir, dirSectors, streamSizes,
+        writeDirectory(buffer, firstDir, dirSectors, streamSizes,
                        miniStarts, regularStarts, firstMiniStream, miniStreamTotal);
 
-        // Write metadata to output via channel
-        metadataBuffer.position(0);
-        metadataBuffer.limit(metadataSize);
-        outChannel.write(metadataBuffer);
+        // Write encrypted package data directly to mapped buffer
+        streamEncryptedData(buffer, metadataSize, plainDataStream, plainDataSize, encryptedPackageSectors);
 
-        // Stream the encrypted package
-        streamEncryptedData(plainDataStream, plainDataSize, encryptedPackageSectors);
+        // Force flush to disk
+        buffer.force();
     }
 
     /**
@@ -327,19 +317,20 @@ public final class CfbWriter implements Closeable {
     }
 
     /**
-     * Streams plain data, encrypting in 4KB segments and writing directly to output.
+     * Encrypts plain data in 4KB segments and writes directly to MappedByteBuffer.
      */
-    private void streamEncryptedData(InputStream plainData, long plainDataSize,
-            int encryptedPackageSectors)
+    private void streamEncryptedData(MappedByteBuffer buffer, int metadataSize,
+            InputStream plainData, long plainDataSize, int encryptedPackageSectors)
             throws IOException, GeneralSecurityException {
 
+        // Position buffer at start of encrypted package
+        buffer.position(metadataSize);
+
         // Write 8-byte size header (original plain data size)
-        sizeBuf.clear();
-        sizeBuf.putLong(plainDataSize);
-        sizeBuf.flip();
-        outChannel.write(sizeBuf);
+        buffer.putLong(plainDataSize);
 
         MessageDigest sha512 = MessageDigest.getInstance("SHA-512");
+        byte[] indexBytes = new byte[4];
 
         long bytesWritten = 8; // size header already written
         int segmentIndex = 0;
@@ -362,48 +353,28 @@ public final class CfbWriter implements Closeable {
                 break;
             }
 
-            // Copy to direct buffer for encryption
-            segmentInputBuf.clear();
-            segmentInputBuf.put(readBuffer, 0, totalRead);
-            segmentInputBuf.flip();
-
             // Generate IV: SHA512(salt + LE32(segmentIndex))[0:16]
             sha512.reset();
             sha512.update(keyDataSalt);
-            indexBuf.clear();
-            indexBuf.putInt(segmentIndex);
-            indexBuf.flip();
-            sha512.update(indexBuf);
+            indexBytes[0] = (byte) segmentIndex;
+            indexBytes[1] = (byte) (segmentIndex >> 8);
+            indexBytes[2] = (byte) (segmentIndex >> 16);
+            indexBytes[3] = (byte) (segmentIndex >> 24);
+            sha512.update(indexBytes);
             byte[] hash = sha512.digest();
             System.arraycopy(hash, 0, ivBuffer, 0, 16);
 
-            // Encrypt segment using ByteBuffer API with reusable Cipher
-            encryptOutputBuf.clear();
-            int encryptedLen = AesCipher.encrypt(cipher, segmentInputBuf, encryptOutputBuf, encryptionKey, ivBuffer);
-            encryptOutputBuf.flip();
-            outChannel.write(encryptOutputBuf);
+            // Encrypt segment and write directly to MappedByteBuffer
+            ByteBuffer input = ByteBuffer.wrap(readBuffer, 0, totalRead);
+            int encryptedLen = AesCipher.encrypt(cipher, input, buffer, encryptionKey, ivBuffer);
             bytesWritten += encryptedLen;
 
             remaining -= totalRead;
             segmentIndex++;
         }
 
-        // Pad to minimum size if needed (4104 bytes minimum)
-        int paddingRemaining = (int) (4104 - bytesWritten);
-        while (paddingRemaining > 0) {
-            int toWrite = Math.min(paddingRemaining, ZERO_BUFFER.length);
-            out.write(ZERO_BUFFER, 0, toWrite);
-            paddingRemaining -= toWrite;
-            bytesWritten += toWrite;
-        }
-
-        // Pad to sector boundary
-        int sectorPaddingRemaining = (int) ((long) encryptedPackageSectors * SECTOR_SIZE - bytesWritten);
-        while (sectorPaddingRemaining > 0) {
-            int toWrite = Math.min(sectorPaddingRemaining, ZERO_BUFFER.length);
-            out.write(ZERO_BUFFER, 0, toWrite);
-            sectorPaddingRemaining -= toWrite;
-        }
+        // Padding is already zero-initialized by MappedByteBuffer, just advance position
+        // to ensure file size is correct (already mapped to full size)
     }
 
     private int sectorsNeeded(long size, int sectorSize) {
@@ -647,6 +618,6 @@ public final class CfbWriter implements Closeable {
 
     @Override
     public void close() throws IOException {
-        out.close();
+        channel.close();
     }
 }
