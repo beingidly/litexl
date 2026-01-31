@@ -1,8 +1,8 @@
 plugins {
     java
     application
-    id("me.champeau.jmh") version "0.7.2"
-    id("org.graalvm.buildtools.native") version "0.10.4"
+    id("me.champeau.jmh") version "0.7.3"
+    id("org.graalvm.buildtools.native") version "0.11.4"
 }
 
 application {
@@ -24,7 +24,7 @@ dependencies {
     implementation(project(":"))
 
     // Apache POI for comparison (JVM only)
-    implementation("org.apache.poi:poi-ooxml:5.3.0")
+    implementation("org.apache.poi:poi-ooxml:5.5.1")
 
     // JMH
     jmh("org.openjdk.jmh:jmh-core:1.37")

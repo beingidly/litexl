@@ -108,9 +108,9 @@ tasks.withType<Checkstyle>().configureEach {
 mavenPublishing {
     configure(com.vanniktech.maven.publish.JavaLibrary(
         javadocJar = com.vanniktech.maven.publish.JavadocJar.Javadoc(),
-        sourcesJar = true
+        sourcesJar = com.vanniktech.maven.publish.SourcesJar.Sources()
     ))
-    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
+    publishToMavenCentral()
     signAllPublications()
 
     pom {
