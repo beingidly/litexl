@@ -1,14 +1,19 @@
 package com.beingidly.litexl;
 
 import com.beingidly.litexl.crypto.AesCipher;
+import com.beingidly.litexl.crypto.KeyDerivation;
 
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
+import java.util.Base64;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Writer for CFB (Compound File Binary) format used by encrypted Office documents.
@@ -16,15 +21,14 @@ import java.security.MessageDigest;
  *
  * <p>This class implements {@link Closeable} and should be used with try-with-resources:</p>
  * <pre>{@code
- * try (CfbWriter writer = new CfbWriter(out, encryptionInfo, encryptionKey, keyDataSalt)) {
+ * try (CfbWriter writer = new CfbWriter(out, encryptionInfo, encryptionKey, keyDataSalt, hmacKey)) {
  *     writer.writeEncrypted(plainDataStream, plainDataSize);
  * }
  * }</pre>
  */
 final class CfbWriter implements Closeable {
 
-    // Reusable zero buffer for padding operations
-    private static final byte[] ZERO_BUFFER = new byte[4096];
+    private static final int MAC_BUFFER_SIZE = 4096;
 
     // CFB constants (v3 format with 512-byte sectors)
     private static final int HEADER_SIZE = 512;
@@ -177,6 +181,7 @@ final class CfbWriter implements Closeable {
     private final byte[] encryptionInfo;
     private final byte[] encryptionKey;
     private final byte[] keyDataSalt;
+    private final byte[] hmacKey;
 
     // Reusable buffers
     private final byte[] ivBuffer = new byte[16];
@@ -190,12 +195,14 @@ final class CfbWriter implements Closeable {
      * @param encryptionInfo the encryption info XML with header
      * @param encryptionKey the AES encryption key
      * @param keyDataSalt the salt for IV generation
+     * @param hmacKey the HMAC key used for package integrity
      */
-    CfbWriter(FileChannel channel, byte[] encryptionInfo, byte[] encryptionKey, byte[] keyDataSalt) {
+    CfbWriter(FileChannel channel, byte[] encryptionInfo, byte[] encryptionKey, byte[] keyDataSalt, byte[] hmacKey) {
         this.channel = channel;
         this.encryptionInfo = encryptionInfo;
         this.encryptionKey = encryptionKey;
         this.keyDataSalt = keyDataSalt;
+        this.hmacKey = hmacKey;
         this.aesCipher = new AesCipher(encryptionKey);
     }
 
@@ -280,7 +287,16 @@ final class CfbWriter implements Closeable {
         writeFat(buffer, fatSectors, miniFatSectors, dirSectors,
                  miniStreamSectors, encryptedPackageSectors, regularStarts);
 
-        // Write Mini FAT and Mini Stream
+        // Write encrypted package data directly to mapped buffer
+        streamEncryptedData(buffer, metadataSize, plainDataStream, plainDataSize);
+
+        // Build the final dataIntegrity value from the actual EncryptedPackage stream bytes.
+        byte[] packageHmac = computePackageHmac(buffer, metadataSize, encryptedPackageSize);
+        byte[] encryptedHmacValue = encryptPackageHmac(packageHmac);
+        streams[3] = updateEncryptedHmacValue(streams[3], encryptedHmacValue);
+        streamSizes[3] = streams[3].length;
+
+        // Write Mini FAT and Mini Stream (includes the finalized EncryptionInfo stream)
         int[] miniStarts = new int[DIR_COUNT];
         writeMiniStream(buffer, firstMiniFat, firstMiniStream, miniFatSectors,
                         streams, streamSizes, miniStarts);
@@ -288,9 +304,6 @@ final class CfbWriter implements Closeable {
         // Write directory entries
         writeDirectory(buffer, firstDir, dirSectors, streamSizes,
                        miniStarts, regularStarts, firstMiniStream, miniStreamTotal);
-
-        // Write encrypted package data directly to mapped buffer
-        streamEncryptedData(buffer, metadataSize, plainDataStream, plainDataSize, encryptedPackageSectors);
 
         // Force flush to disk
         buffer.force();
@@ -315,7 +328,7 @@ final class CfbWriter implements Closeable {
      * Encrypts plain data in 4KB segments and writes directly to MappedByteBuffer.
      */
     private void streamEncryptedData(MappedByteBuffer buffer, int metadataSize,
-            InputStream plainData, long plainDataSize, int encryptedPackageSectors)
+            InputStream plainData, long plainDataSize)
             throws IOException, GeneralSecurityException {
 
         // Position buffer at start of encrypted package
@@ -327,7 +340,6 @@ final class CfbWriter implements Closeable {
         MessageDigest sha512 = MessageDigest.getInstance("SHA-512");
         byte[] indexBytes = new byte[4];
 
-        long bytesWritten = 8; // size header already written
         int segmentIndex = 0;
         long remaining = plainDataSize;
 
@@ -361,8 +373,7 @@ final class CfbWriter implements Closeable {
 
             // Encrypt segment and write directly to MappedByteBuffer
             ByteBuffer input = ByteBuffer.wrap(readBuffer, 0, totalRead);
-            int encryptedLen = aesCipher.encrypt(input, buffer, ivBuffer);
-            bytesWritten += encryptedLen;
+            aesCipher.encrypt(input, buffer, ivBuffer);
 
             remaining -= totalRead;
             segmentIndex++;
@@ -370,6 +381,68 @@ final class CfbWriter implements Closeable {
 
         // Padding is already zero-initialized by MappedByteBuffer, just advance position
         // to ensure file size is correct (already mapped to full size)
+    }
+
+    private byte[] computePackageHmac(MappedByteBuffer buffer, int encryptedPackageOffset, long encryptedPackageSize)
+            throws GeneralSecurityException {
+        Mac mac = Mac.getInstance("HmacSHA512");
+        mac.init(new SecretKeySpec(hmacKey, "HmacSHA512"));
+
+        ByteBuffer view = buffer.duplicate();
+        view.position(encryptedPackageOffset);
+
+        byte[] chunk = new byte[MAC_BUFFER_SIZE];
+        long remaining = encryptedPackageSize;
+        while (remaining > 0) {
+            int toRead = (int) Math.min(chunk.length, remaining);
+            view.get(chunk, 0, toRead);
+            mac.update(chunk, 0, toRead);
+            remaining -= toRead;
+        }
+        return mac.doFinal();
+    }
+
+    private byte[] encryptPackageHmac(byte[] packageHmac) throws GeneralSecurityException {
+        MessageDigest sha512 = MessageDigest.getInstance("SHA-512");
+        sha512.update(keyDataSalt);
+        sha512.update(KeyDerivation.BLOCK_KEY_DATA_INTEGRITY_HMAC_VALUE);
+        byte[] iv = new byte[16];
+        System.arraycopy(sha512.digest(), 0, iv, 0, 16);
+        return aesCipher.encryptNoPadding(packageHmac, iv);
+    }
+
+    private byte[] updateEncryptedHmacValue(byte[] infoWithHeader, byte[] encryptedHmacValue) throws IOException {
+        if (infoWithHeader.length < 8) {
+            throw new IOException("Invalid EncryptionInfo stream");
+        }
+
+        String xml = new String(infoWithHeader, 8, infoWithHeader.length - 8, StandardCharsets.UTF_8);
+        String marker = "encryptedHmacValue=\"";
+        int markerIndex = xml.indexOf(marker);
+        if (markerIndex < 0) {
+            throw new IOException("EncryptionInfo missing encryptedHmacValue");
+        }
+
+        int valueStart = markerIndex + marker.length();
+        int valueEnd = xml.indexOf('"', valueStart);
+        if (valueEnd < 0) {
+            throw new IOException("Malformed encryptedHmacValue in EncryptionInfo");
+        }
+
+        String replacement = Base64.getEncoder().encodeToString(encryptedHmacValue);
+        if (replacement.length() != valueEnd - valueStart) {
+            throw new IOException("Encrypted HMAC value length mismatch");
+        }
+
+        String updatedXml = xml.substring(0, valueStart) + replacement + xml.substring(valueEnd);
+        byte[] updatedXmlBytes = updatedXml.getBytes(StandardCharsets.UTF_8);
+        if (updatedXmlBytes.length != infoWithHeader.length - 8) {
+            throw new IOException("EncryptionInfo XML length changed unexpectedly");
+        }
+
+        byte[] updatedInfo = infoWithHeader.clone();
+        System.arraycopy(updatedXmlBytes, 0, updatedInfo, 8, updatedXmlBytes.length);
+        return updatedInfo;
     }
 
     private int sectorsNeeded(long size, int sectorSize) {

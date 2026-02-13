@@ -15,6 +15,8 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.file.Path;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -471,6 +473,37 @@ class PoiCompatibilityTest {
     }
 
     @Test
+    void encryptedFileIntegrityHmac() throws Exception {
+        Path file = tempDir.resolve("encrypted-hmac.xlsx");
+        String password = "integrityPass";
+
+        try (Workbook wb = Workbook.create()) {
+            Sheet sheet = wb.addSheet("Integrity");
+            sheet.cell(0, 0).set("HMAC check");
+            wb.save(file, EncryptionOptions.aes256(password));
+        }
+
+        assertIntegrityHmacMatches(file, password);
+    }
+
+    @Test
+    void encryptedFileIntegrityHmacLargePackage() throws Exception {
+        Path file = tempDir.resolve("encrypted-hmac-large.xlsx");
+        String password = "largeIntegrityPass";
+
+        try (Workbook wb = Workbook.create()) {
+            Sheet sheet = wb.addSheet("Large");
+            for (int i = 0; i < 3000; i++) {
+                sheet.cell(i, 0).set("row-" + i);
+                sheet.cell(i, 1).set(i);
+            }
+            wb.save(file, EncryptionOptions.aes256(password));
+        }
+
+        assertIntegrityHmacMatches(file, password);
+    }
+
+    @Test
     void multipleSheetsWithData() throws Exception {
         Path file = tempDir.resolve("multi-data.xlsx");
 
@@ -580,6 +613,32 @@ class PoiCompatibilityTest {
                 assertEquals("Second Sheet Data", wb.getSheet("Data2").getRow(0).getCell(0).getStringCellValue());
                 assertEquals(999.0, wb.getSheet("Data2").getRow(1).getCell(0).getNumericCellValue());
             }
+        }
+    }
+
+    private void assertIntegrityHmacMatches(Path file, String password) throws Exception {
+        try (POIFSFileSystem fs = new POIFSFileSystem(file.toFile())) {
+            EncryptionInfo info = new EncryptionInfo(fs);
+            Decryptor decryptor = Decryptor.getInstance(info);
+
+            assertTrue(decryptor.verifyPassword(password));
+            byte[] integrityHmacKey = decryptor.getIntegrityHmacKey();
+            byte[] expectedHmacValue = decryptor.getIntegrityHmacValue();
+            assertNotNull(integrityHmacKey);
+            assertNotNull(expectedHmacValue);
+
+            Mac mac = Mac.getInstance("HmacSHA512");
+            mac.init(new SecretKeySpec(integrityHmacKey, "HmacSHA512"));
+
+            try (InputStream encryptedPackage = fs.createDocumentInputStream("EncryptedPackage")) {
+                byte[] buffer = new byte[4096];
+                int read;
+                while ((read = encryptedPackage.read(buffer)) != -1) {
+                    mac.update(buffer, 0, read);
+                }
+            }
+
+            assertArrayEquals(expectedHmacValue, mac.doFinal());
         }
     }
 }

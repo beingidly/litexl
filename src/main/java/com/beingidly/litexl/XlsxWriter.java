@@ -680,14 +680,17 @@ final class XlsxWriter implements Closeable {
      * Writes encrypted CFB directly to the destination file via FileChannel + MappedByteBuffer.
      */
     private void writeAsCfbDirect(Path xlsxTempFile, long xlsxSize, Path destPath) throws IOException, GeneralSecurityException {
-        byte[][] encryptionData = generateEncryptionData();
-        byte[] encryptionInfo = encryptionData[0];
-        byte[] encryptionKey = encryptionData[1];
-        byte[] keyDataSalt = encryptionData[2];
+        EncryptionData encryptionData = generateEncryptionData();
 
         try (InputStream xlsxIn = Files.newInputStream(xlsxTempFile);
              FileChannel fc = FileChannel.open(destPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-             CfbWriter cfbWriter = new CfbWriter(fc, encryptionInfo, encryptionKey, keyDataSalt)) {
+             CfbWriter cfbWriter = new CfbWriter(
+                 fc,
+                 encryptionData.encryptionInfo(),
+                 encryptionData.encryptionKey(),
+                 encryptionData.keyDataSalt(),
+                 encryptionData.hmacKey()
+             )) {
 
             cfbWriter.writeEncrypted(xlsxIn, xlsxSize);
         }
@@ -697,17 +700,20 @@ final class XlsxWriter implements Closeable {
      * Writes encrypted CFB to a temp file, then transfers to OutputStream.
      */
     private void writeAsCfbToStream(Path xlsxTempFile, long xlsxSize, OutputStream out) throws IOException, GeneralSecurityException {
-        byte[][] encryptionData = generateEncryptionData();
-        byte[] encryptionInfo = encryptionData[0];
-        byte[] encryptionKey = encryptionData[1];
-        byte[] keyDataSalt = encryptionData[2];
+        EncryptionData encryptionData = generateEncryptionData();
 
         Path cfbTempFile = Files.createTempFile("litexl-cfb-", ".tmp");
         try {
             // Write to temp CFB file via MappedByteBuffer
             try (InputStream xlsxIn = Files.newInputStream(xlsxTempFile);
                  FileChannel fc = FileChannel.open(cfbTempFile, StandardOpenOption.WRITE, StandardOpenOption.READ, StandardOpenOption.CREATE);
-                 CfbWriter cfbWriter = new CfbWriter(fc, encryptionInfo, encryptionKey, keyDataSalt)) {
+                 CfbWriter cfbWriter = new CfbWriter(
+                     fc,
+                     encryptionData.encryptionInfo(),
+                     encryptionData.encryptionKey(),
+                     encryptionData.keyDataSalt(),
+                     encryptionData.hmacKey()
+                 )) {
 
                 cfbWriter.writeEncrypted(xlsxIn, xlsxSize);
             }
@@ -722,9 +728,10 @@ final class XlsxWriter implements Closeable {
     }
 
     /**
-     * Generates encryption components and returns [encryptionInfo, encryptionKey, keyDataSalt].
+     * Generates encryption components for CFB/Agile encryption.
+     * The final HMAC value is computed after EncryptedPackage bytes are written.
      */
-    private byte[][] generateEncryptionData() throws GeneralSecurityException, IOException {
+    private EncryptionData generateEncryptionData() throws GeneralSecurityException, IOException {
         assert encryptionOptions != null : "encryptionOptions must be set";
 
         java.security.SecureRandom random = new java.security.SecureRandom();
@@ -769,7 +776,8 @@ final class XlsxWriter implements Closeable {
         byte[] encryptedVerifierHash = new com.beingidly.litexl.crypto.AesCipher(verifierHashKey)
             .encryptNoPadding(verifierHash, encryptedKeySalt);
 
-        // For HMAC placeholder (MS Office doesn't strictly verify HMAC)
+        // HMAC key is encrypted into EncryptionInfo; HMAC value itself is filled in after
+        // EncryptedPackage is written, because it must cover the final stream bytes.
         byte[] hmacKey = new byte[64];
         random.nextBytes(hmacKey);
 
@@ -790,8 +798,15 @@ final class XlsxWriter implements Closeable {
             encryptedHmacKey, encryptedHmacValue
         );
 
-        return new byte[][] { encryptionInfo, encryptionKey, keyDataSalt };
+        return new EncryptionData(encryptionInfo, encryptionKey, keyDataSalt, hmacKey);
     }
+
+    private record EncryptionData(
+        byte[] encryptionInfo,
+        byte[] encryptionKey,
+        byte[] keyDataSalt,
+        byte[] hmacKey
+    ) {}
 
     private byte[] deriveHmacIv(byte[] salt, byte[] blockKey) throws GeneralSecurityException {
         java.security.MessageDigest sha512 = java.security.MessageDigest.getInstance("SHA-512");
