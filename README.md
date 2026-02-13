@@ -28,7 +28,7 @@ Pure Java library for reading and writing Excel XLSX files. Lightweight, fast, w
 
 ```kotlin
 dependencies {
-    implementation("com.beingidly:litexl:0.1.0")
+    implementation("com.beingidly:litexl:0.1.4")
 }
 ```
 
@@ -38,7 +38,7 @@ dependencies {
 <dependency>
     <groupId>com.beingidly</groupId>
     <artifactId>litexl</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.4</version>
 </dependency>
 ```
 
