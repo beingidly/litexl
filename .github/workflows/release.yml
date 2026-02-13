@@ -33,7 +33,7 @@ jobs:
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Build JARs
-        run: ./gradlew jar sourcesJar javadocJar
+        run: ./gradlew jar sourcesJar plainJavadocJar
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
