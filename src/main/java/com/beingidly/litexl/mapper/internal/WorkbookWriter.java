@@ -6,6 +6,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.RecordComponent;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -75,6 +76,9 @@ public final class WorkbookWriter {
 
         // Process @LitexlCell annotated fields
         List<Field> cellFields = ReflectionHelper.getAnnotatedFields(type, LitexlCell.class);
+        cellFields.sort(Comparator
+            .comparingInt((Field f) -> f.getAnnotation(LitexlCell.class).row())
+            .thenComparingInt(f -> f.getAnnotation(LitexlCell.class).column()));
         for (Field field : cellFields) {
             LitexlCell cellAnnotation = field.getAnnotation(LitexlCell.class);
             Object fieldValue = ReflectionHelper.getFieldValue(data, field);

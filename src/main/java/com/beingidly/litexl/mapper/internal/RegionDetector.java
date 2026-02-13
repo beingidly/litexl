@@ -17,18 +17,19 @@ public final class RegionDetector {
     }
 
     public static @Nullable Region detectRegion(Sheet sheet, Set<String> headers, int startRow) {
-        for (var entry : sheet.rows().entrySet()) {
-            int rowIndex = entry.getKey();
+        final Region[] result = new Region[1];
+        sheet.forEachRow(row -> {
+            int rowIndex = row.rowNum();
             if (rowIndex < startRow) {
-                continue;
+                return true;
             }
-
-            var row = entry.getValue();
             if (matchesHeaders(row, headers)) {
-                return new Region(rowIndex, rowIndex + 1);
+                result[0] = new Region(rowIndex, rowIndex + 1);
+                return false;
             }
-        }
-        return null;
+            return true;
+        });
+        return result[0];
     }
 
     public static @Nullable Region detectRegionWithEnd(
@@ -57,30 +58,28 @@ public final class RegionDetector {
     }
 
     private static int findEndRow(Sheet sheet, int dataStartRow, Set<String> nextHeaders) {
-        int lastDataRow = dataStartRow - 1;
-
-        for (var entry : sheet.rows().entrySet()) {
-            int rowIndex = entry.getKey();
+        final int[] lastDataRow = { dataStartRow - 1 };
+        sheet.forEachRow(row -> {
+            int rowIndex = row.rowNum();
             if (rowIndex < dataStartRow) {
-                continue;
+                return true;
             }
-
-            var row = entry.getValue();
 
             // Check if this row matches the next region's headers
             if (matchesHeaders(row, nextHeaders)) {
-                return lastDataRow;
+                return false;
             }
 
             // Check if this is an empty row (potential region separator)
             if (ReflectionHelper.isEmptyRow(row)) {
-                continue;
+                return true;
             }
 
-            lastDataRow = rowIndex;
-        }
+            lastDataRow[0] = rowIndex;
+            return true;
+        });
 
-        return lastDataRow;
+        return lastDataRow[0];
     }
 
     public static Set<String> extractHeaders(Class<?> rowType) {

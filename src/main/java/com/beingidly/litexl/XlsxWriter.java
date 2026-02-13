@@ -257,22 +257,30 @@ final class XlsxWriter implements Closeable {
             // Sheet data
             xml.startElement("sheetData");
 
-            for (Map.Entry<Integer, Row> rowEntry : sheet.rows().entrySet()) {
-                Row row = rowEntry.getValue();
-                xml.startElement("row");
-                xml.attribute("r", String.valueOf(row.rowNum() + 1));
+            try {
+                sheet.forEachRow(row -> {
+                    try {
+                        xml.startElement("row");
+                        xml.attribute("r", String.valueOf(row.rowNum() + 1));
 
-                if (row.hasCustomHeight()) {
-                    xml.attribute("ht", String.valueOf(row.height()));
-                    xml.attribute("customHeight", "1");
-                }
+                        if (row.hasCustomHeight()) {
+                            xml.attribute("ht", String.valueOf(row.height()));
+                            xml.attribute("customHeight", "1");
+                        }
 
-                for (Map.Entry<Integer, Cell> cellEntry : row.cells().entrySet()) {
-                    Cell cell = cellEntry.getValue();
-                    writeCell(xml, cell, row.rowNum());
-                }
+                        for (Map.Entry<Integer, Cell> cellEntry : row.cells().entrySet()) {
+                            Cell cell = cellEntry.getValue();
+                            writeCell(xml, cell, row.rowNum());
+                        }
 
-                xml.endElement(); // row
+                        xml.endElement(); // row
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                    return true;
+                });
+            } catch (UncheckedIOException e) {
+                throw e.getCause();
             }
 
             xml.endElement(); // sheetData

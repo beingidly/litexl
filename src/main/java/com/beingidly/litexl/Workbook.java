@@ -268,6 +268,12 @@ public final class Workbook implements AutoCloseable {
 
     @Override
     public void close() {
+        if (closed) {
+            return;
+        }
+        for (Sheet sheet : sheets) {
+            sheet.closeResources();
+        }
         closed = true;
     }
 

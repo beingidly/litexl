@@ -188,92 +188,115 @@ final class XlsxReader implements Closeable {
         }
 
         try (is) {
-            XmlReader xml = new XmlReader(is);
-            String currentRef = null;
-            String currentType = null;
-            int currentStyle = 0;
-            boolean inInlineStr = false;
+            try {
+                XmlReader xml = new XmlReader(is);
+                String currentRef = null;
+                String currentType = null;
+                int currentStyle = 0;
+                boolean inInlineStr = false;
 
-            while (xml.hasNext()) {
-                XmlReader.Event event = xml.next();
+                while (xml.hasNext()) {
+                    XmlReader.Event event = xml.next();
 
-                if (event == XmlReader.Event.START_ELEMENT) {
-                    String name = xml.getLocalName();
+                    if (event == XmlReader.Event.START_ELEMENT) {
+                        String name = xml.getLocalName();
 
-                    if ("c".equals(name)) {
-                        // Cell element
-                        currentRef = xml.getAttributeValue("r");
-                        currentType = xml.getAttributeValue("t");
-                        String styleStr = xml.getAttributeValue("s");
-                        currentStyle = styleStr != null ? Integer.parseInt(styleStr) : 0;
-                    } else if ("is".equals(name)) {
-                        // Inline string container
-                        inInlineStr = true;
-                    } else if ("t".equals(name) && inInlineStr) {
-                        // Inline string text
-                        assert currentRef != null : "currentRef must be set inside cell";
-                        String value = xml.getElementText();
-                        int[] coords = CellRefUtil.parseRef(currentRef);
-                        Cell cell = sheet.cell(coords[0], coords[1]);
-                        cell.set(value);
-                        cell.style(currentStyle);
-                    } else if ("v".equals(name)) {
-                        // Value element
-                        assert currentRef != null : "currentRef must be set inside cell";
-                        String value = xml.getElementText();
-                        int[] coords = CellRefUtil.parseRef(currentRef);
-                        Cell cell = sheet.cell(coords[0], coords[1]);
-                        cell.style(currentStyle);
+                        if ("row".equals(name)) {
+                            String rowRef = xml.getAttributeValue("r");
+                            if (rowRef != null) {
+                                int rowIndex = Integer.parseInt(rowRef) - 1;
+                                if (rowIndex >= 0) {
+                                    Row row = sheet.row(rowIndex);
 
-                        if (currentType == null) {
-                            // Number or date (default)
-                            double num = Double.parseDouble(value);
-                            cell.set(num);
-                        } else {
-                            switch (currentType) {
-                                case "s" -> {
-                                    // Shared string
-                                    int idx = Integer.parseInt(value);
-                                    if (idx < sharedStrings.size()) {
-                                        cell.set(sharedStrings.get(idx));
+                                    String ht = xml.getAttributeValue("ht");
+                                    String customHeight = xml.getAttributeValue("customHeight");
+                                    if (ht != null && "1".equals(customHeight)) {
+                                        row.height(Double.parseDouble(ht));
+                                    }
+
+                                    String hidden = xml.getAttributeValue("hidden");
+                                    if ("1".equals(hidden)) {
+                                        row.hidden(true);
                                     }
                                 }
-                                case "b" -> cell.set("1".equals(value)); // Boolean
-                                case "e" -> cell.setValue(new CellValue.Error(value)); // Error
-                                default -> {
-                                    // Other types - treat as number
-                                    double num = Double.parseDouble(value);
-                                    cell.set(num);
+                            }
+                        } else if ("c".equals(name)) {
+                            // Cell element
+                            currentRef = xml.getAttributeValue("r");
+                            currentType = xml.getAttributeValue("t");
+                            String styleStr = xml.getAttributeValue("s");
+                            currentStyle = styleStr != null ? Integer.parseInt(styleStr) : 0;
+                        } else if ("is".equals(name)) {
+                            // Inline string container
+                            inInlineStr = true;
+                        } else if ("t".equals(name) && inInlineStr) {
+                            // Inline string text
+                            assert currentRef != null : "currentRef must be set inside cell";
+                            String value = xml.getElementText();
+                            int[] coords = CellRefUtil.parseRef(currentRef);
+                            Cell cell = sheet.cell(coords[0], coords[1]);
+                            cell.set(value);
+                            cell.style(currentStyle);
+                        } else if ("v".equals(name)) {
+                            // Value element
+                            assert currentRef != null : "currentRef must be set inside cell";
+                            String value = xml.getElementText();
+                            int[] coords = CellRefUtil.parseRef(currentRef);
+                            Cell cell = sheet.cell(coords[0], coords[1]);
+                            cell.style(currentStyle);
+
+                            if (currentType == null) {
+                                // Number or date (default)
+                                double num = Double.parseDouble(value);
+                                cell.set(num);
+                            } else {
+                                switch (currentType) {
+                                    case "s" -> {
+                                        // Shared string
+                                        int idx = Integer.parseInt(value);
+                                        if (idx < sharedStrings.size()) {
+                                            cell.set(sharedStrings.get(idx));
+                                        }
+                                    }
+                                    case "b" -> cell.set("1".equals(value)); // Boolean
+                                    case "e" -> cell.setValue(new CellValue.Error(value)); // Error
+                                    default -> {
+                                        // Other types - treat as number
+                                        double num = Double.parseDouble(value);
+                                        cell.set(num);
+                                    }
                                 }
                             }
+                        } else if ("f".equals(name)) {
+                            // Formula element
+                            assert currentRef != null : "currentRef must be set inside cell";
+                            String formula = xml.getElementText();
+                            int[] coords = CellRefUtil.parseRef(currentRef);
+                            Cell cell = sheet.cell(coords[0], coords[1]);
+                            cell.setFormula(formula);
+                            cell.style(currentStyle);
+                        } else if ("mergeCell".equals(name)) {
+                            // Merged cell
+                            String ref = xml.getAttributeValue("ref");
+                            if (ref != null) {
+                                CellRange range = CellRange.parse(ref);
+                                sheet.merge(range);
+                            }
                         }
-                    } else if ("f".equals(name)) {
-                        // Formula element
-                        assert currentRef != null : "currentRef must be set inside cell";
-                        String formula = xml.getElementText();
-                        int[] coords = CellRefUtil.parseRef(currentRef);
-                        Cell cell = sheet.cell(coords[0], coords[1]);
-                        cell.setFormula(formula);
-                        cell.style(currentStyle);
-                    } else if ("mergeCell".equals(name)) {
-                        // Merged cell
-                        String ref = xml.getAttributeValue("ref");
-                        if (ref != null) {
-                            CellRange range = CellRange.parse(ref);
-                            sheet.merge(range);
+                    } else if (event == XmlReader.Event.END_ELEMENT) {
+                        String name = xml.getLocalName();
+                        if ("c".equals(name)) {
+                            currentRef = null;
+                            currentType = null;
+                            currentStyle = 0;
+                            inInlineStr = false;
+                        } else if ("is".equals(name)) {
+                            inInlineStr = false;
                         }
-                    }
-                } else if (event == XmlReader.Event.END_ELEMENT) {
-                    String name = xml.getLocalName();
-                    if ("c".equals(name)) {
-                        currentRef = null;
-                        currentType = null;
-                        currentStyle = 0;
-                        inInlineStr = false;
-                    } else if ("is".equals(name)) {
-                        inInlineStr = false;
                     }
                 }
+            } finally {
+                sheet.finishLoadingReadOnly();
             }
         }
     }

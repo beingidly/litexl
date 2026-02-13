@@ -164,19 +164,18 @@ public final class WorkbookReader {
         List<Object> result = new ArrayList<>();
         int dataStartRow = sheetAnnotation.dataStartRow();
 
-        Map<Integer, Row> rows = sheet.rows();
-        for (Map.Entry<Integer, Row> entry : rows.entrySet()) {
-            int rowNum = entry.getKey();
+        sheet.forEachRow(row -> {
+            int rowNum = row.rowNum();
             if (rowNum < dataStartRow) {
-                continue;
+                return true;
             }
 
-            Row row = entry.getValue();
             Object rowObject = readRow(row, elementType);
             if (rowObject != null) {
                 result.add(rowObject);
             }
-        }
+            return true;
+        });
 
         return result;
     }
@@ -330,22 +329,22 @@ public final class WorkbookReader {
         Map<String, Integer> columnMap = buildColumnMapFromHeaderRow(sheet, region.headerRow());
         List<Object> result = new ArrayList<>();
 
-        for (Map.Entry<Integer, Row> entry : sheet.rows().entrySet()) {
-            int rowIndex = entry.getKey();
+        sheet.forEachRow(row -> {
+            int rowIndex = row.rowNum();
             if (rowIndex < region.dataStartRow() || rowIndex > region.dataEndRow()) {
-                continue;
+                return true;
             }
 
-            Row row = entry.getValue();
             if (ReflectionHelper.isEmptyRow(row)) {
-                continue;
+                return true;
             }
 
             Object obj = readRowWithColumnMap(row, rowType, columnMap);
             if (obj != null) {
                 result.add(obj);
             }
-        }
+            return true;
+        });
 
         return result;
     }

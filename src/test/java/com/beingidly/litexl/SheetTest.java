@@ -89,7 +89,7 @@ class SheetTest {
 
         sheet.row(3);
         sheet.row(10);
-        sheet.row(5);
+        assertThrows(IllegalStateException.class, () -> sheet.row(5));
 
         assertTrue(sheet.firstRow().exists());
         assertTrue(sheet.lastRow().exists());
