@@ -15,4 +15,7 @@ public final class ChartInternalAccess {
     public static String xmlValue(RadarStyle s) { return s.xmlValue(); }
     public static String xmlValue(DisplayBlanks d) { return d.xmlValue(); }
     public static String xmlValue(LegendPosition p) { return p.xmlValue(); }
+    public static String xmlValue(ChartErrorBars.Type t) { return t.xmlValue(); }
+    public static String xmlValue(ChartErrorBars.Direction d) { return d.xmlValue(); }
+    public static String xmlValue(ChartErrorBars.ValueType vt) { return vt.xmlValue(); }
 }

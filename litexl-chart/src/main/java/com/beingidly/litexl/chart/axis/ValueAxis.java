@@ -26,8 +26,8 @@ public record ValueAxis(
 
     public static ValueAxis of(int id, int crossAxisId) {
         return new ValueAxis(id, null, AxisPosition.LEFT, AxisOrientation.MIN_MAX,
-            null, AxisTickMark.OUTSIDE, AxisTickMark.NONE, true, crossAxisId,
-            AxisCrosses.AUTO_ZERO, AxisCrossBetween.BETWEEN,
+            null, AxisTickMark.CROSS, AxisTickMark.NONE, true, crossAxisId,
+            AxisCrosses.AUTO_ZERO, AxisCrossBetween.MID_CAT,
             null, null, null, null, null);
     }
 
@@ -42,11 +42,11 @@ public record ValueAxis(
         private AxisPosition position = AxisPosition.LEFT;
         private AxisOrientation orientation = AxisOrientation.MIN_MAX;
         private @Nullable String numberFormat;
-        private AxisTickMark majorTickMark = AxisTickMark.OUTSIDE;
+        private AxisTickMark majorTickMark = AxisTickMark.CROSS;
         private AxisTickMark minorTickMark = AxisTickMark.NONE;
         private boolean visible = true;
         private AxisCrosses crosses = AxisCrosses.AUTO_ZERO;
-        private AxisCrossBetween crossBetween = AxisCrossBetween.BETWEEN;
+        private AxisCrossBetween crossBetween = AxisCrossBetween.MID_CAT;
         private @Nullable Double minimum;
         private @Nullable Double maximum;
         private @Nullable Double majorUnit;

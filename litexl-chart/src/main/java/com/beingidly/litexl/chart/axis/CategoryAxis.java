@@ -19,7 +19,7 @@ public record CategoryAxis(
 
     public static CategoryAxis of(int id, int crossAxisId) {
         return new CategoryAxis(id, null, AxisPosition.BOTTOM, AxisOrientation.MIN_MAX,
-            AxisTickMark.OUTSIDE, AxisTickMark.NONE, true, crossAxisId, AxisCrossBetween.BETWEEN);
+            AxisTickMark.CROSS, AxisTickMark.NONE, true, crossAxisId, AxisCrossBetween.MID_CAT);
     }
 
     public static Builder builder(int id, int crossAxisId) {
@@ -32,10 +32,10 @@ public record CategoryAxis(
         private @Nullable String title;
         private AxisPosition position = AxisPosition.BOTTOM;
         private AxisOrientation orientation = AxisOrientation.MIN_MAX;
-        private AxisTickMark majorTickMark = AxisTickMark.OUTSIDE;
+        private AxisTickMark majorTickMark = AxisTickMark.CROSS;
         private AxisTickMark minorTickMark = AxisTickMark.NONE;
         private boolean visible = true;
-        private AxisCrossBetween crossBetween = AxisCrossBetween.BETWEEN;
+        private AxisCrossBetween crossBetween = AxisCrossBetween.MID_CAT;
 
         private Builder(int id, int crossAxisId) {
             this.id = id;

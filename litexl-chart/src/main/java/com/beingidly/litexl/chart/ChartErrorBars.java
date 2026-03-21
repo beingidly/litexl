@@ -6,13 +6,40 @@ package com.beingidly.litexl.chart;
 public record ChartErrorBars(Type type, Direction direction, ValueType valueType, double value) {
 
     /** Error bar type. */
-    public enum Type { BOTH, PLUS, MINUS }
+    public enum Type {
+        BOTH, PLUS, MINUS;
+        String xmlValue() {
+            return switch (this) {
+                case BOTH -> "both";
+                case PLUS -> "plus";
+                case MINUS -> "minus";
+            };
+        }
+    }
 
     /** Error bar direction. */
-    public enum Direction { X, Y }
+    public enum Direction {
+        X, Y;
+        String xmlValue() {
+            return switch (this) {
+                case X -> "x";
+                case Y -> "y";
+            };
+        }
+    }
 
     /** How the error value is interpreted. */
-    public enum ValueType { FIXED, PERCENTAGE, STANDARD_DEVIATION, STANDARD_ERROR }
+    public enum ValueType {
+        FIXED, PERCENTAGE, STANDARD_DEVIATION, STANDARD_ERROR;
+        String xmlValue() {
+            return switch (this) {
+                case FIXED -> "fixed";
+                case PERCENTAGE -> "percentage";
+                case STANDARD_DEVIATION -> "stdDev";
+                case STANDARD_ERROR -> "stdErr";
+            };
+        }
+    }
 
     /** Creates percentage error bars. */
     public static ChartErrorBars percentage(double percent) {

@@ -40,7 +40,7 @@ final class ChartXmlWriter {
         if (chart.title() != null) {
             writeTitle(xml, chart.title());
         } else {
-            cEmptyVal(xml, "autoTitleDeleted", "1");
+            cEmptyVal(xml, "autoTitleDeleted", "true");
         }
 
         // 3D view
@@ -185,6 +185,13 @@ final class ChartXmlWriter {
             xml.endElement();
         }
 
+        // For pie/doughnut, explosion comes before dLbls/cat/val per CT_PieSer schema
+        boolean isPie = chartType == ChartType.PIE || chartType == ChartType.PIE_3D
+            || chartType == ChartType.DOUGHNUT;
+        if (isPie && series.explosion() > 0) {
+            cEmptyVal(xml, "explosion", String.valueOf(series.explosion()));
+        }
+
         if (series.marker() != null) writeMarker(xml, series.marker());
         if (series.dataLabel() != null) writeDataLabels(xml, series.dataLabel());
 
@@ -196,8 +203,11 @@ final class ChartXmlWriter {
         String valTag = chartType == ChartType.SCATTER ? "yVal" : "val";
         writeDataSourceElement(xml, valTag, series.values(), sheet);
 
-        if (series.smooth()) cEmptyVal(xml, "smooth", "1");
-        if (series.explosion() > 0) cEmptyVal(xml, "explosion", String.valueOf(series.explosion()));
+        if (series.smooth()) cEmptyVal(xml, "smooth", "true");
+        if (!isPie && series.explosion() > 0) {
+            cEmptyVal(xml, "explosion", String.valueOf(series.explosion()));
+        }
+        if (series.errorBars() != null) writeErrorBars(xml, series.errorBars());
 
         xml.endElement(); // c:ser
     }
@@ -329,8 +339,14 @@ final class ChartXmlWriter {
 
         if (axes.isEmpty()) {
             if (chart.type() == ChartType.SCATTER) {
-                writeValueAxis(xml, ValueAxis.of(0, 1));
+                writeValueAxis(xml, ValueAxis.builder(0, 1)
+                    .position(AxisPosition.BOTTOM).build());
                 writeValueAxis(xml, ValueAxis.of(1, 0));
+            } else if (chart.plotConfig().barDirection() == BarDirection.BAR) {
+                writeCategoryAxis(xml, CategoryAxis.builder(0, 1)
+                    .position(AxisPosition.LEFT).build());
+                writeValueAxis(xml, ValueAxis.builder(1, 0)
+                    .position(AxisPosition.BOTTOM).build());
             } else {
                 writeCategoryAxis(xml, CategoryAxis.of(0, 1));
                 writeValueAxis(xml, ValueAxis.of(1, 0));
@@ -397,7 +413,7 @@ final class ChartXmlWriter {
         if (axis instanceof ValueAxis va && va.numberFormat() != null) {
             cEmpty(xml, "numFmt");
             xml.attribute("formatCode", va.numberFormat());
-            xml.attribute("sourceLinked", "0");
+            xml.attribute("sourceLinked", "false");
         }
 
         cEmptyVal(xml, "majorTickMark", xmlValue(axis.majorTickMark()));
@@ -424,7 +440,7 @@ final class ChartXmlWriter {
         xml.endElement(); // a:p
         xml.endElement(); // c:rich
         xml.endElement(); // c:tx
-        cEmptyVal(xml, "overlay", "0");
+        cEmptyVal(xml, "overlay", "false");
         xml.endElement(); // c:title
     }
 
@@ -456,7 +472,7 @@ final class ChartXmlWriter {
                 xml.endElement(); // a:gsLst
                 aEmpty(xml, "lin");
                 xml.attribute("ang", String.valueOf((int) (grad.angle() * 60000)));
-                xml.attribute("scaled", "1");
+                xml.attribute("scaled", "true");
                 xml.endElement();
             }
             case ChartFill.Pattern pat -> {
@@ -504,16 +520,25 @@ final class ChartXmlWriter {
 
     private static void writeDataLabels(XmlWriter xml, ChartDataLabel label) throws IOException {
         cStart(xml, "dLbls");
-        cEmptyVal(xml, "showLegendKey", "0");
-        cEmptyVal(xml, "showVal", label.showValue() ? "1" : "0");
-        cEmptyVal(xml, "showCatName", label.showCategory() ? "1" : "0");
-        cEmptyVal(xml, "showSerName", label.showSeriesName() ? "1" : "0");
-        cEmptyVal(xml, "showPercent", label.showPercent() ? "1" : "0");
-        cEmptyVal(xml, "showBubbleSize", "0");
+        cEmptyVal(xml, "showLegendKey", "false");
+        cEmptyVal(xml, "showVal", label.showValue() ? "true" : "false");
+        cEmptyVal(xml, "showCatName", label.showCategory() ? "true" : "false");
+        cEmptyVal(xml, "showSerName", label.showSeriesName() ? "true" : "false");
+        cEmptyVal(xml, "showPercent", label.showPercent() ? "true" : "false");
+        cEmptyVal(xml, "showBubbleSize", "false");
         if (label.separator() != null) {
             cStart(xml, "separator"); xml.text(label.separator()); xml.endElement();
         }
-        if (label.showLeaderLines()) cEmptyVal(xml, "showLeaderLines", "1");
+        if (label.showLeaderLines()) cEmptyVal(xml, "showLeaderLines", "true");
+        xml.endElement();
+    }
+
+    private static void writeErrorBars(XmlWriter xml, ChartErrorBars bars) throws IOException {
+        cStart(xml, "errBars");
+        cEmptyVal(xml, "errDir", xmlValue(bars.direction()));
+        cEmptyVal(xml, "errBarType", xmlValue(bars.type()));
+        cEmptyVal(xml, "errValType", xmlValue(bars.valueType()));
+        cEmptyVal(xml, "val", String.valueOf(bars.value()));
         xml.endElement();
     }
 
@@ -521,8 +546,8 @@ final class ChartXmlWriter {
         aStart(xml, "rPr");
         xml.attribute("lang", "en-US");
         xml.attribute("sz", String.valueOf((int) (font.size() * 100)));
-        if (font.bold()) xml.attribute("b", "1");
-        if (font.italic()) xml.attribute("i", "1");
+        if (font.bold()) xml.attribute("b", "true");
+        if (font.italic()) xml.attribute("i", "true");
         if (font.color() != null) {
             aStart(xml, "solidFill"); writeColor(xml, font.color()); xml.endElement();
         }

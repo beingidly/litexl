@@ -28,9 +28,14 @@ final class ChartXmlReader {
             boolean inTitle = false;
             boolean inSeries = false;
             boolean inLegend = false;
+            boolean inErrBars = false;
             String seriesName = null;
             String catRef = null;
             String valRef = null;
+            ChartErrorBars.Type errType = null;
+            ChartErrorBars.Direction errDir = null;
+            ChartErrorBars.ValueType errValType = null;
+            double errVal = 0;
 
             while (xml.hasNext()) {
                 XmlReader.Event event = xml.next();
@@ -59,10 +64,48 @@ final class ChartXmlReader {
                             String val = xml.getAttributeValue("val");
                             if (val != null) scatterStyle = parseScatterStyle(val);
                         }
+                        case "errBars" -> { if (inSeries) inErrBars = true; }
+                        case "errDir" -> {
+                            if (inErrBars) {
+                                String val = xml.getAttributeValue("val");
+                                if ("x".equals(val)) errDir = ChartErrorBars.Direction.X;
+                                else if ("y".equals(val)) errDir = ChartErrorBars.Direction.Y;
+                            }
+                        }
+                        case "errBarType" -> {
+                            if (inErrBars) {
+                                String val = xml.getAttributeValue("val");
+                                errType = switch (val) {
+                                    case "plus" -> ChartErrorBars.Type.PLUS;
+                                    case "minus" -> ChartErrorBars.Type.MINUS;
+                                    default -> ChartErrorBars.Type.BOTH;
+                                };
+                            }
+                        }
+                        case "errValType" -> {
+                            if (inErrBars) {
+                                String val = xml.getAttributeValue("val");
+                                errValType = switch (val) {
+                                    case "fixed" -> ChartErrorBars.ValueType.FIXED;
+                                    case "percentage" -> ChartErrorBars.ValueType.PERCENTAGE;
+                                    case "stdDev" -> ChartErrorBars.ValueType.STANDARD_DEVIATION;
+                                    case "stdErr" -> ChartErrorBars.ValueType.STANDARD_ERROR;
+                                    default -> ChartErrorBars.ValueType.FIXED;
+                                };
+                            }
+                        }
                         case "legendPos" -> {
                             if (inLegend) {
                                 String val = xml.getAttributeValue("val");
                                 if (val != null) legendPos = parseLegendPosition(val);
+                            }
+                        }
+                        case "val" -> {
+                            if (inErrBars) {
+                                String val = xml.getAttributeValue("val");
+                                if (val != null) {
+                                    try { errVal = Double.parseDouble(val); } catch (NumberFormatException ignored) {}
+                                }
                             }
                         }
                         case "f" -> {
@@ -95,6 +138,7 @@ final class ChartXmlReader {
                     switch (name) {
                         case "title" -> inTitle = false;
                         case "legend" -> inLegend = false;
+                        case "errBars" -> inErrBars = false;
                         case "ser" -> {
                             inSeries = false;
                             // Build series from collected data
@@ -102,12 +146,19 @@ final class ChartXmlReader {
                             ChartDataSource valSource = valRef != null
                                 ? ChartDataSource.ofRange(valRef)
                                 : ChartDataSource.ofNumbers(0);
+                            ChartErrorBars errorBars = (errType != null && errDir != null && errValType != null)
+                                ? new ChartErrorBars(errType, errDir, errValType, errVal)
+                                : null;
                             seriesList.add(new ChartSeries(
                                 seriesName, catSource, valSource,
-                                null, null, null, null, null, false, 0));
+                                null, null, null, null, errorBars, false, 0));
                             seriesName = null;
                             catRef = null;
                             valRef = null;
+                            errType = null;
+                            errDir = null;
+                            errValType = null;
+                            errVal = 0;
                         }
                     }
                 }
