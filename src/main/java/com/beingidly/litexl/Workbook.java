@@ -1,6 +1,8 @@
 package com.beingidly.litexl;
 
 import com.beingidly.litexl.crypto.EncryptionOptions;
+import com.beingidly.litexl.crypto.WorkbookProtection;
+import com.beingidly.litexl.crypto.WriteProtection;
 import com.beingidly.litexl.style.Style;
 
 import org.jspecify.annotations.Nullable;
@@ -37,6 +39,8 @@ public final class Workbook implements AutoCloseable {
     private final List<Style> styles;
     private final List<String> sharedStrings;
     private final Map<String, Integer> sharedStringIndex;
+    private final WriteProtectionManager writeProtectionManager;
+    private final WorkbookProtectionManager workbookProtectionManager;
     private boolean closed;
 
     private Workbook() {
@@ -44,6 +48,8 @@ public final class Workbook implements AutoCloseable {
         this.styles = new ArrayList<>();
         this.sharedStrings = new ArrayList<>();
         this.sharedStringIndex = new HashMap<>();
+        this.writeProtectionManager = new WriteProtectionManager();
+        this.workbookProtectionManager = new WorkbookProtectionManager();
         this.closed = false;
 
         // Add default style at index 0
@@ -231,6 +237,127 @@ public final class Workbook implements AutoCloseable {
      */
     public List<Style> styles() {
         return Collections.unmodifiableList(styles);
+    }
+
+    // === Write Protection (fileSharing) ===
+
+    /**
+     * Sets write protection with a password.
+     *
+     * <p>The password is immediately hashed and the char array is cleared.</p>
+     *
+     * @param password the password (will be cleared after hashing)
+     * @param userName the name of the user setting the protection
+     */
+    public void setWriteProtection(char[] password, String userName) {
+        ensureOpen();
+        writeProtectionManager.protect(password, userName);
+    }
+
+    /**
+     * Sets write protection without a password (read-only recommended).
+     *
+     * @param userName the name of the user setting the protection
+     */
+    public void setWriteProtection(String userName) {
+        ensureOpen();
+        writeProtectionManager.protect(userName);
+    }
+
+    /**
+     * Removes write protection.
+     */
+    public void removeWriteProtection() {
+        ensureOpen();
+        writeProtectionManager.remove();
+    }
+
+    /**
+     * Returns the write protection settings, or null if not set.
+     */
+    public @Nullable WriteProtection writeProtection() {
+        return writeProtectionManager.protection();
+    }
+
+    /**
+     * Returns true if write protection is set.
+     */
+    public boolean isWriteProtected() {
+        return writeProtectionManager.isProtected();
+    }
+
+    /**
+     * Returns the write protection manager for advanced operations.
+     */
+    public WriteProtectionManager writeProtectionManager() {
+        return writeProtectionManager;
+    }
+
+    // === Workbook Structure Protection (workbookProtection) ===
+
+    /**
+     * Protects the workbook structure with a password.
+     *
+     * <p>The password is immediately hashed and the char array is cleared.</p>
+     *
+     * @param password the password (will be cleared after hashing)
+     * @param options the protection options
+     */
+    public void protectStructure(char[] password, WorkbookProtection options) {
+        ensureOpen();
+        workbookProtectionManager.protect(password, options);
+    }
+
+    /**
+     * Protects the workbook structure without a password.
+     *
+     * @param options the protection options
+     */
+    public void protectStructure(WorkbookProtection options) {
+        ensureOpen();
+        workbookProtectionManager.protect(options);
+    }
+
+    /**
+     * Unprotects the workbook structure if the password matches.
+     *
+     * @param password the password to verify (will be cleared after verification)
+     * @return true if unprotected successfully
+     */
+    public boolean unprotectStructure(char[] password) {
+        ensureOpen();
+        return workbookProtectionManager.unprotect(password);
+    }
+
+    /**
+     * Unprotects the workbook structure (no password required if no password was set).
+     *
+     * @return true if unprotected successfully
+     */
+    public boolean unprotectStructure() {
+        ensureOpen();
+        return workbookProtectionManager.unprotect();
+    }
+
+    /**
+     * Returns the workbook structure protection settings, or null if not protected.
+     */
+    public @Nullable WorkbookProtection structureProtection() {
+        return workbookProtectionManager.options();
+    }
+
+    /**
+     * Returns true if the workbook structure is protected.
+     */
+    public boolean isStructureProtected() {
+        return workbookProtectionManager.isProtected();
+    }
+
+    /**
+     * Returns the workbook protection manager for advanced operations.
+     */
+    public WorkbookProtectionManager workbookProtectionManager() {
+        return workbookProtectionManager;
     }
 
     // === Shared Strings (internal use) ===

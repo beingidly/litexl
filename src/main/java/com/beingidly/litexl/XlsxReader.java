@@ -1,6 +1,9 @@
 package com.beingidly.litexl;
 
 import com.beingidly.litexl.crypto.AgileDecryptor;
+import com.beingidly.litexl.crypto.SheetHasher;
+import com.beingidly.litexl.crypto.WorkbookProtection;
+import com.beingidly.litexl.crypto.WriteProtection;
 
 import org.jspecify.annotations.Nullable;
 
@@ -71,7 +74,7 @@ final class XlsxReader implements Closeable {
         readStyles();
 
         // Read workbook.xml to get sheet names and order
-        List<SheetInfo> sheetInfos = readWorkbook();
+        List<SheetInfo> sheetInfos = readWorkbook(wb);
 
         // Read each sheet
         for (SheetInfo info : sheetInfos) {
@@ -117,7 +120,7 @@ final class XlsxReader implements Closeable {
         is.close();
     }
 
-    private List<SheetInfo> readWorkbook() throws IOException {
+    private List<SheetInfo> readWorkbook(Workbook wb) throws IOException {
         assert zip != null : "zip must be initialized";
         List<SheetInfo> sheets = new ArrayList<>();
         Map<String, String> relsMap = readWorkbookRelationships();
@@ -132,26 +135,78 @@ final class XlsxReader implements Closeable {
             int index = 0;
             while (xml.hasNext()) {
                 XmlReader.Event event = xml.next();
-                if (event == XmlReader.Event.START_ELEMENT && "sheet".equals(xml.getLocalName())) {
-                    String name = xml.getAttributeValue("name");
-                    if (name == null) {
-                        continue; // Skip sheets without name (corrupt file)
-                    }
-                    String rId = xml.getAttributeValue("r:id");
-                    if (rId == null) {
-                        rId = xml.getAttributeValue("id");
-                    }
-                    if (rId != null) {
-                        String target = relsMap.get(rId);
-                        if (target != null) {
-                            sheets.add(new SheetInfo(name, index++, "xl/" + target));
+                if (event == XmlReader.Event.START_ELEMENT) {
+                    String localName = xml.getLocalName();
+
+                    if ("sheet".equals(localName)) {
+                        String name = xml.getAttributeValue("name");
+                        if (name == null) {
+                            continue; // Skip sheets without name (corrupt file)
                         }
+                        String rId = xml.getAttributeValue("r:id");
+                        if (rId == null) {
+                            rId = xml.getAttributeValue("id");
+                        }
+                        if (rId != null) {
+                            String target = relsMap.get(rId);
+                            if (target != null) {
+                                sheets.add(new SheetInfo(name, index++, "xl/" + target));
+                            }
+                        }
+                    } else if ("fileSharing".equals(localName)) {
+                        parseFileSharing(xml, wb);
+                    } else if ("workbookProtection".equals(localName)) {
+                        parseWorkbookProtection(xml, wb);
                     }
                 }
             }
         }
 
         return sheets;
+    }
+
+    private void parseFileSharing(XmlReader xml, Workbook wb) {
+        String readOnlyRec = xml.getAttributeValue("readOnlyRecommended");
+        String userName = xml.getAttributeValue("userName");
+
+        boolean readOnlyRecommended = "1".equals(readOnlyRec) || "true".equals(readOnlyRec);
+        String user = userName != null ? userName : "";
+
+        wb.writeProtectionManager().setProtection(
+            new WriteProtection(readOnlyRecommended, user)
+        );
+
+        String algorithmName = xml.getAttributeValue("algorithmName");
+        String hashValue = xml.getAttributeValue("hashValue");
+        String saltValue = xml.getAttributeValue("saltValue");
+        String spinCountStr = xml.getAttributeValue("spinCount");
+
+        if (algorithmName != null && hashValue != null && saltValue != null && spinCountStr != null) {
+            wb.writeProtectionManager().setPasswordInfo(
+                new SheetHasher.SheetProtectionInfo(saltValue, hashValue, algorithmName, Integer.parseInt(spinCountStr))
+            );
+        }
+    }
+
+    private void parseWorkbookProtection(XmlReader xml, Workbook wb) {
+        String lockStructure = xml.getAttributeValue("lockStructure");
+        String lockWindows = xml.getAttributeValue("lockWindows");
+
+        boolean structure = "1".equals(lockStructure) || "true".equals(lockStructure);
+        boolean windows = "1".equals(lockWindows) || "true".equals(lockWindows);
+
+        wb.workbookProtectionManager().protect(new WorkbookProtection(structure, windows));
+
+        String algorithmName = xml.getAttributeValue("workbookAlgorithmName");
+        String hashValue = xml.getAttributeValue("workbookHashValue");
+        String saltValue = xml.getAttributeValue("workbookSaltValue");
+        String spinCountStr = xml.getAttributeValue("workbookSpinCount");
+
+        if (algorithmName != null && hashValue != null && saltValue != null && spinCountStr != null) {
+            wb.workbookProtectionManager().setPasswordInfo(
+                new SheetHasher.SheetProtectionInfo(saltValue, hashValue, algorithmName, Integer.parseInt(spinCountStr))
+            );
+        }
     }
 
     private Map<String, String> readWorkbookRelationships() throws IOException {

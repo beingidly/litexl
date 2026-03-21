@@ -2,6 +2,7 @@ package com.beingidly.litexl;
 
 import com.beingidly.litexl.crypto.EncryptionOptions;
 import com.beingidly.litexl.crypto.SheetProtection;
+import com.beingidly.litexl.crypto.WorkbookProtection;
 import com.beingidly.litexl.style.*;
 import org.apache.poi.poifs.crypt.Decryptor;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
@@ -613,6 +614,152 @@ class PoiCompatibilityTest {
                 assertEquals("Second Sheet Data", wb.getSheet("Data2").getRow(0).getCell(0).getStringCellValue());
                 assertEquals(999.0, wb.getSheet("Data2").getRow(1).getCell(0).getNumericCellValue());
             }
+        }
+    }
+
+    @Test
+    void writeProtection() throws Exception {
+        Path file = tempDir.resolve("write-protected.xlsx");
+
+        // Write with litexl
+        try (Workbook wb = Workbook.create()) {
+            Sheet sheet = wb.addSheet("Data");
+            sheet.cell(0, 0).set("Protected Content");
+
+            wb.setWriteProtection("modifyPass".toCharArray(), "TestAdmin");
+            wb.save(file);
+        }
+
+        // Verify with POI
+        try (FileInputStream fis = new FileInputStream(file.toFile());
+             XSSFWorkbook wb = new XSSFWorkbook(fis)) {
+
+            var fileSharing = wb.getCTWorkbook().getFileSharing();
+            assertNotNull(fileSharing);
+            assertTrue(fileSharing.getReadOnlyRecommended());
+            assertEquals("TestAdmin", fileSharing.getUserName());
+            assertNotNull(fileSharing.getHashValue());
+            assertNotNull(fileSharing.getSaltValue());
+            assertEquals("SHA-512", fileSharing.getAlgorithmName());
+
+            assertEquals("Protected Content", wb.getSheetAt(0).getRow(0).getCell(0).getStringCellValue());
+        }
+    }
+
+    @Test
+    void writeProtectionWithoutPassword() throws Exception {
+        Path file = tempDir.resolve("write-protected-no-pass.xlsx");
+
+        // Write with litexl
+        try (Workbook wb = Workbook.create()) {
+            Sheet sheet = wb.addSheet("Data");
+            sheet.cell(0, 0).set("Read Only Recommended");
+
+            wb.setWriteProtection("User1");
+            wb.save(file);
+        }
+
+        // Verify with POI
+        try (FileInputStream fis = new FileInputStream(file.toFile());
+             XSSFWorkbook wb = new XSSFWorkbook(fis)) {
+
+            var fileSharing = wb.getCTWorkbook().getFileSharing();
+            assertNotNull(fileSharing);
+            assertTrue(fileSharing.getReadOnlyRecommended());
+            assertEquals("User1", fileSharing.getUserName());
+
+            assertEquals("Read Only Recommended", wb.getSheetAt(0).getRow(0).getCell(0).getStringCellValue());
+        }
+    }
+
+    @Test
+    void workbookStructureProtection() throws Exception {
+        Path file = tempDir.resolve("structure-protected.xlsx");
+
+        // Write with litexl
+        try (Workbook wb = Workbook.create()) {
+            Sheet sheet = wb.addSheet("Data");
+            sheet.cell(0, 0).set("Structure Protected");
+
+            wb.protectStructure("structPass".toCharArray(), WorkbookProtection.defaults());
+            wb.save(file);
+        }
+
+        // Verify with POI
+        try (FileInputStream fis = new FileInputStream(file.toFile());
+             XSSFWorkbook wb = new XSSFWorkbook(fis)) {
+
+            var wbProt = wb.getCTWorkbook().getWorkbookProtection();
+            assertNotNull(wbProt);
+            assertTrue(wbProt.getLockStructure());
+            assertNotNull(wbProt.getWorkbookHashValue());
+            assertNotNull(wbProt.getWorkbookSaltValue());
+            assertEquals("SHA-512", wbProt.getWorkbookAlgorithmName());
+
+            assertEquals("Structure Protected", wb.getSheetAt(0).getRow(0).getCell(0).getStringCellValue());
+        }
+    }
+
+    @Test
+    void workbookStructureProtectionCustomOptions() throws Exception {
+        Path file = tempDir.resolve("structure-protected-custom.xlsx");
+
+        // Write with litexl
+        try (Workbook wb = Workbook.create()) {
+            Sheet sheet = wb.addSheet("Data");
+            sheet.cell(0, 0).set("Custom Protection");
+
+            WorkbookProtection options = WorkbookProtection.builder()
+                    .lockStructure(true)
+                    .lockWindows(true)
+                    .build();
+            wb.protectStructure("pass".toCharArray(), options);
+            wb.save(file);
+        }
+
+        // Verify with POI
+        try (FileInputStream fis = new FileInputStream(file.toFile());
+             XSSFWorkbook wb = new XSSFWorkbook(fis)) {
+
+            var wbProt = wb.getCTWorkbook().getWorkbookProtection();
+            assertNotNull(wbProt);
+            assertTrue(wbProt.getLockStructure());
+            assertTrue(wbProt.getLockWindows());
+
+            assertEquals("Custom Protection", wb.getSheetAt(0).getRow(0).getCell(0).getStringCellValue());
+        }
+    }
+
+    @Test
+    void bothWriteAndStructureProtection() throws Exception {
+        Path file = tempDir.resolve("both-protections.xlsx");
+
+        // Write with litexl
+        try (Workbook wb = Workbook.create()) {
+            Sheet sheet = wb.addSheet("Data");
+            sheet.cell(0, 0).set("Fully Protected");
+
+            wb.setWriteProtection("writePass".toCharArray(), "Admin");
+            wb.protectStructure("structPass".toCharArray(), WorkbookProtection.defaults());
+            wb.save(file);
+        }
+
+        // Verify with POI
+        try (FileInputStream fis = new FileInputStream(file.toFile());
+             XSSFWorkbook wb = new XSSFWorkbook(fis)) {
+
+            // Write protection
+            var fileSharing = wb.getCTWorkbook().getFileSharing();
+            assertNotNull(fileSharing);
+            assertTrue(fileSharing.getReadOnlyRecommended());
+            assertEquals("Admin", fileSharing.getUserName());
+
+            // Structure protection
+            var wbProt = wb.getCTWorkbook().getWorkbookProtection();
+            assertNotNull(wbProt);
+            assertTrue(wbProt.getLockStructure());
+
+            assertEquals("Fully Protected", wb.getSheetAt(0).getRow(0).getCell(0).getStringCellValue());
         }
     }
 

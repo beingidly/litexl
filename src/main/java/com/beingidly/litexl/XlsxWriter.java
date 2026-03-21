@@ -2,6 +2,8 @@ package com.beingidly.litexl;
 
 import com.beingidly.litexl.crypto.EncryptionOptions;
 import com.beingidly.litexl.crypto.SheetHasher;
+import com.beingidly.litexl.crypto.WorkbookProtection;
+import com.beingidly.litexl.crypto.WriteProtection;
 import com.beingidly.litexl.format.*;
 import com.beingidly.litexl.style.*;
 import org.jspecify.annotations.Nullable;
@@ -205,6 +207,16 @@ final class XlsxWriter implements Closeable {
             xml.startElement("workbook");
             xml.attribute("xmlns", NS_SPREADSHEETML);
             xml.attribute("xmlns:r", NS_RELATIONSHIPS);
+
+            // fileSharing (before sheets per OOXML spec)
+            if (workbook.isWriteProtected()) {
+                writeFileSharing(xml);
+            }
+
+            // workbookProtection (before sheets per OOXML spec)
+            if (workbook.isStructureProtected()) {
+                writeWorkbookProtection(xml);
+            }
 
             xml.startElement("sheets");
             for (int i = 0; i < workbook.sheetCount(); i++) {
@@ -635,6 +647,52 @@ final class XlsxWriter implements Closeable {
         }
 
         xml.endElement();
+    }
+
+    private void writeFileSharing(XmlWriter xml) throws IOException {
+        WriteProtection wp = workbook.writeProtection();
+        if (wp == null) {
+            return;
+        }
+
+        xml.emptyElement("fileSharing");
+
+        if (wp.readOnlyRecommended()) {
+            xml.attribute("readOnlyRecommended", "1");
+        }
+        xml.attribute("userName", wp.userName());
+
+        SheetHasher.SheetProtectionInfo hashInfo = workbook.writeProtectionManager().passwordInfo();
+        if (hashInfo != null) {
+            xml.attribute("algorithmName", hashInfo.algorithmName());
+            xml.attribute("hashValue", hashInfo.hashValue());
+            xml.attribute("saltValue", hashInfo.saltValue());
+            xml.attribute("spinCount", String.valueOf(hashInfo.spinCount()));
+        }
+    }
+
+    private void writeWorkbookProtection(XmlWriter xml) throws IOException {
+        WorkbookProtection prot = workbook.structureProtection();
+        if (prot == null) {
+            return;
+        }
+
+        xml.emptyElement("workbookProtection");
+
+        if (prot.lockStructure()) {
+            xml.attribute("lockStructure", "1");
+        }
+        if (prot.lockWindows()) {
+            xml.attribute("lockWindows", "1");
+        }
+
+        SheetHasher.SheetProtectionInfo hashInfo = workbook.workbookProtectionManager().passwordInfo();
+        if (hashInfo != null) {
+            xml.attribute("workbookAlgorithmName", hashInfo.algorithmName());
+            xml.attribute("workbookHashValue", hashInfo.hashValue());
+            xml.attribute("workbookSaltValue", hashInfo.saltValue());
+            xml.attribute("workbookSpinCount", String.valueOf(hashInfo.spinCount()));
+        }
     }
 
     /**
