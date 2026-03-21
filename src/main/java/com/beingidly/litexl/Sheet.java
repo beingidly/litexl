@@ -8,6 +8,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -39,6 +40,7 @@ public final class Sheet {
     private int firstRow = -1;
     private int lastRow = -1;
     private boolean readOnly;
+    private final Map<String, Object> extensionData;
 
     /**
      * Creates a new sheet. Internal use only - use Workbook.addSheet() instead.
@@ -53,6 +55,7 @@ public final class Sheet {
         this.currentRow = null;
         this.rowCount = 0;
         this.readOnly = false;
+        this.extensionData = new HashMap<>();
     }
 
     /**
@@ -262,6 +265,42 @@ public final class Sheet {
      */
     public SheetProtectionManager protectionManager() {
         return protectionManager;
+    }
+
+    // === Extension Data ===
+
+    /**
+     * Stores extension data under the given key.
+     *
+     * <p>Used by extension modules (e.g. litexl-chart) to attach
+     * additional data to a sheet without coupling the core module.
+     *
+     * @param key   the extension key
+     * @param value the data to store
+     */
+    public void putExtensionData(String key, Object value) {
+        extensionData.put(key, value);
+    }
+
+    /**
+     * Returns extension data for the given key, or null if not present.
+     */
+    public @Nullable Object getExtensionData(String key) {
+        return extensionData.get(key);
+    }
+
+    /**
+     * Returns true if extension data exists for the given key.
+     */
+    public boolean hasExtensionData(String key) {
+        return extensionData.containsKey(key);
+    }
+
+    /**
+     * Removes extension data for the given key.
+     */
+    public void removeExtensionData(String key) {
+        extensionData.remove(key);
     }
 
     // === Convenience Methods (delegating to SheetFormat) ===

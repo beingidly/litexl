@@ -7,7 +7,7 @@ import java.io.IOException;
 /**
  * Streaming XML writer wrapper using StAX.
  */
-final class XmlWriter implements AutoCloseable {
+public final class XmlWriter implements AutoCloseable {
 
     private final XMLStreamWriter writer;
 
@@ -45,6 +45,21 @@ final class XmlWriter implements AutoCloseable {
         }
     }
 
+    /**
+     * Starts a namespace-qualified element with proper namespace binding.
+     *
+     * @param prefix       the namespace prefix (e.g. "c")
+     * @param localName    the local name (e.g. "chartSpace")
+     * @param namespaceUri the namespace URI
+     */
+    public void startElement(String prefix, String localName, String namespaceUri) throws IOException {
+        try {
+            writer.writeStartElement(prefix, localName, namespaceUri);
+        } catch (XMLStreamException e) {
+            throw new IOException("XML write error", e);
+        }
+    }
+
     public void endElement() throws IOException {
         try {
             writer.writeEndElement();
@@ -61,9 +76,52 @@ final class XmlWriter implements AutoCloseable {
         }
     }
 
+    /**
+     * Writes an empty namespace-qualified element with proper namespace binding.
+     *
+     * @param prefix       the namespace prefix (e.g. "c")
+     * @param localName    the local name (e.g. "layout")
+     * @param namespaceUri the namespace URI
+     */
+    public void emptyElement(String prefix, String localName, String namespaceUri) throws IOException {
+        try {
+            writer.writeEmptyElement(prefix, localName, namespaceUri);
+        } catch (XMLStreamException e) {
+            throw new IOException("XML write error", e);
+        }
+    }
+
     public void attribute(String name, String value) throws IOException {
         try {
             writer.writeAttribute(name, value);
+        } catch (XMLStreamException e) {
+            throw new IOException("XML write error", e);
+        }
+    }
+
+    /**
+     * Writes a namespace declaration (xmlns:prefix="uri").
+     *
+     * @param prefix       the namespace prefix
+     * @param namespaceUri the namespace URI
+     */
+    public void namespace(String prefix, String namespaceUri) throws IOException {
+        try {
+            writer.writeNamespace(prefix, namespaceUri);
+        } catch (XMLStreamException e) {
+            throw new IOException("XML write error", e);
+        }
+    }
+
+    /**
+     * Sets a namespace prefix binding for subsequent elements.
+     *
+     * @param prefix       the namespace prefix
+     * @param namespaceUri the namespace URI
+     */
+    public void setPrefix(String prefix, String namespaceUri) throws IOException {
+        try {
+            writer.setPrefix(prefix, namespaceUri);
         } catch (XMLStreamException e) {
             throw new IOException("XML write error", e);
         }

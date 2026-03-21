@@ -4,6 +4,8 @@ import org.jspecify.annotations.Nullable;
 
 import java.io.*;
 import java.nio.file.Path;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -34,6 +36,15 @@ final class ZipReader implements AutoCloseable {
      */
     public boolean hasEntry(String name) {
         return zipFile.getEntry(name) != null;
+    }
+
+    /**
+     * Returns all entry names in the ZIP.
+     */
+    public Set<String> entryNames() {
+        return zipFile.stream()
+            .map(ZipEntry::getName)
+            .collect(Collectors.toUnmodifiableSet());
     }
 
     @Override

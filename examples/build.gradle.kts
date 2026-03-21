@@ -15,6 +15,7 @@ repositories {
 
 dependencies {
     implementation(project(":"))
+    implementation(project(":litexl-chart"))
 }
 
 // Default main class (can be overridden with -PmainClass=...)
@@ -24,7 +25,7 @@ application {
 }
 
 // Create run tasks for each example category
-val categories = listOf("core", "mapper", "security", "advanced")
+val categories = listOf("core", "mapper", "security", "advanced", "chart")
 
 tasks.register("listExamples") {
     group = "examples"

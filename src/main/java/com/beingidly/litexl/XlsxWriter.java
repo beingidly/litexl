@@ -5,6 +5,7 @@ import com.beingidly.litexl.crypto.SheetHasher;
 import com.beingidly.litexl.crypto.WorkbookProtection;
 import com.beingidly.litexl.crypto.WriteProtection;
 import com.beingidly.litexl.format.*;
+import com.beingidly.litexl.spi.*;
 import com.beingidly.litexl.style.*;
 import org.jspecify.annotations.Nullable;
 
@@ -15,8 +16,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.security.GeneralSecurityException;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ServiceLoader;
 
 /**
  * Writes XLSX files.
@@ -47,6 +50,7 @@ final class XlsxWriter implements Closeable {
     private final @Nullable Path path;
     private final @Nullable OutputStream outputStream;
     private @Nullable EncryptionOptions encryptionOptions;
+    private final List<WriteExtension> writeExtensions;
 
     /**
      * Creates a new XLSX writer for the given workbook and output path.
@@ -58,6 +62,7 @@ final class XlsxWriter implements Closeable {
         this.workbook = workbook;
         this.path = path;
         this.outputStream = null;
+        this.writeExtensions = loadExtensions();
     }
 
     /**
@@ -70,6 +75,13 @@ final class XlsxWriter implements Closeable {
         this.workbook = workbook;
         this.path = null;
         this.outputStream = outputStream;
+        this.writeExtensions = loadExtensions();
+    }
+
+    private static List<WriteExtension> loadExtensions() {
+        return ServiceLoader.load(WriteExtension.class).stream()
+            .map(ServiceLoader.Provider::get)
+            .toList();
     }
 
     /**
@@ -95,14 +107,39 @@ final class XlsxWriter implements Closeable {
         }
 
         try (ZipWriter zip = createZipWriter()) {
-            writeContentTypes(zip);
-            writeRootRels(zip);
-            writeWorkbookRels(zip);
-            writeWorkbook(zip);
-            writeStyles(zip);
+            writeAllParts(zip);
+        }
+    }
 
-            for (int i = 0; i < workbook.sheetCount(); i++) {
-                writeSheet(zip, Objects.requireNonNull(workbook.getSheet(i)), i + 1);
+    private void writeAllParts(ZipWriter zip) throws IOException {
+        writeContentTypes(zip);
+        writeRootRels(zip);
+        writeWorkbookRels(zip);
+        writeWorkbook(zip);
+        writeStyles(zip);
+
+        List<Sheet> sheets = workbook.sheets();
+
+        for (int i = 0; i < sheets.size(); i++) {
+            Sheet sheet = sheets.get(i);
+            int sheetNum = i + 1;
+            writeSheet(zip, sheet, sheetNum);
+
+            // Write sheet relationship file if extensions contributed relationships
+            List<Relationship> allRels = new java.util.ArrayList<>();
+            for (WriteExtension ext : writeExtensions) {
+                allRels.addAll(ext.sheetRelationships(sheet, sheetNum));
+            }
+            if (!allRels.isEmpty()) {
+                writeSheetRels(zip, sheetNum, allRels);
+            }
+        }
+
+        // Extension entries (chart XML, drawing XML, media files)
+        if (!writeExtensions.isEmpty()) {
+            WriteContext ctx = zip::newEntry;
+            for (WriteExtension ext : writeExtensions) {
+                ext.writeEntries(ctx, sheets);
             }
         }
     }
@@ -145,6 +182,15 @@ final class XlsxWriter implements Closeable {
                 xml.emptyElement("Override");
                 xml.attribute("PartName", "/xl/worksheets/sheet" + (i + 1) + ".xml");
                 xml.attribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml");
+            }
+
+            // Extension content types (charts, drawings, media, etc.)
+            if (!writeExtensions.isEmpty()) {
+                ContentTypeRegistry registry = new ContentTypeRegistryImpl(xml);
+                List<Sheet> sheets = workbook.sheets();
+                for (WriteExtension ext : writeExtensions) {
+                    ext.contributeContentTypes(registry, sheets);
+                }
             }
 
             xml.endElement(); // Types
@@ -333,6 +379,11 @@ final class XlsxWriter implements Closeable {
                     writeDataValidation(xml, dv);
                 }
                 xml.endElement();
+            }
+
+            // Extension sheet elements (e.g. <drawing r:id="rId1"/>)
+            for (WriteExtension ext : writeExtensions) {
+                ext.writeSheetElements(xml, sheet, sheetNum);
             }
 
             xml.endElement(); // worksheet
@@ -704,14 +755,7 @@ final class XlsxWriter implements Closeable {
         Path xlsxTempFile = Files.createTempFile("litexl-", ".xlsx");
         try {
             try (ZipWriter zip = new ZipWriter(xlsxTempFile)) {
-                writeContentTypes(zip);
-                writeRootRels(zip);
-                writeWorkbookRels(zip);
-                writeWorkbook(zip);
-                writeStyles(zip);
-                for (int i = 0; i < workbook.sheetCount(); i++) {
-                    writeSheet(zip, Objects.requireNonNull(workbook.getSheet(i)), i + 1);
-                }
+                writeAllParts(zip);
             }
 
             long xlsxSize = Files.size(xlsxTempFile);
@@ -920,6 +964,45 @@ final class XlsxWriter implements Closeable {
         out.write(xmlBytes);
 
         return out.toByteArray();
+    }
+
+    private void writeSheetRels(ZipWriter zip, int sheetNum,
+                                List<Relationship> rels) throws IOException {
+        try (OutputStream os = zip.newEntry("xl/worksheets/_rels/sheet" + sheetNum + ".xml.rels");
+             XmlWriter xml = new XmlWriter(os)) {
+            xml.startDocument();
+            xml.startElement("Relationships");
+            xml.attribute("xmlns", NS_PACKAGE_RELS);
+
+            for (Relationship rel : rels) {
+                xml.emptyElement("Relationship");
+                xml.attribute("Id", rel.id());
+                xml.attribute("Type", rel.type());
+                xml.attribute("Target", rel.target());
+            }
+
+            xml.endElement();
+            xml.endDocument();
+        }
+    }
+
+    /**
+     * ContentTypeRegistry implementation that writes directly to the XML stream.
+     */
+    private record ContentTypeRegistryImpl(XmlWriter xml) implements ContentTypeRegistry {
+        @Override
+        public void addDefault(String extension, String contentType) throws IOException {
+            xml.emptyElement("Default");
+            xml.attribute("Extension", extension);
+            xml.attribute("ContentType", contentType);
+        }
+
+        @Override
+        public void addOverride(String partName, String contentType) throws IOException {
+            xml.emptyElement("Override");
+            xml.attribute("PartName", partName);
+            xml.attribute("ContentType", contentType);
+        }
     }
 
     @Override

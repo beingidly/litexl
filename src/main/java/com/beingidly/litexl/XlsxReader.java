@@ -5,6 +5,8 @@ import com.beingidly.litexl.crypto.SheetHasher;
 import com.beingidly.litexl.crypto.WorkbookProtection;
 import com.beingidly.litexl.crypto.WriteProtection;
 
+import com.beingidly.litexl.spi.ReadContext;
+import com.beingidly.litexl.spi.ReadExtension;
 import org.jspecify.annotations.Nullable;
 
 import java.io.*;
@@ -88,7 +90,43 @@ final class XlsxReader implements Closeable {
             wb.addSharedString(s);
         }
 
+        // Extension read hooks (e.g. chart reading)
+        runReadExtensions(wb);
+
         return wb;
+    }
+
+    private void runReadExtensions(Workbook wb) throws IOException {
+        assert zip != null : "zip must be initialized";
+        List<ReadExtension> extensions = ServiceLoader.load(ReadExtension.class).stream()
+            .map(ServiceLoader.Provider::get)
+            .toList();
+
+        if (extensions.isEmpty()) {
+            return;
+        }
+
+        ZipReader zipRef = zip;
+        ReadContext ctx = new ReadContext() {
+            @Override
+            public @Nullable InputStream openEntry(String path) throws IOException {
+                return zipRef.getEntry(path);
+            }
+
+            @Override
+            public boolean hasEntry(String path) {
+                return zipRef.hasEntry(path);
+            }
+
+            @Override
+            public Set<String> entryNames() {
+                return zipRef.entryNames();
+            }
+        };
+
+        for (ReadExtension ext : extensions) {
+            ext.read(ctx, wb);
+        }
     }
 
     private void readSharedStrings() throws IOException {

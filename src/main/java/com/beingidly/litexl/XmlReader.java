@@ -8,7 +8,7 @@ import java.io.InputStream;
 /**
  * SAX-style XML reader wrapper using StAX.
  */
-final class XmlReader implements AutoCloseable {
+public final class XmlReader implements AutoCloseable {
 
     private final XMLStreamReader reader;
 
