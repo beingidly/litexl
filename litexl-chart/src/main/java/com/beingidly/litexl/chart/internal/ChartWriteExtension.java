@@ -17,6 +17,9 @@ import java.util.List;
  */
 public final class ChartWriteExtension implements WriteExtension {
 
+    /** Creates a new chart write extension. */
+    public ChartWriteExtension() {}
+
     @Override
     public void contributeContentTypes(ContentTypeRegistry registry, List<Sheet> sheets) throws IOException {
         int chartNum = 0;

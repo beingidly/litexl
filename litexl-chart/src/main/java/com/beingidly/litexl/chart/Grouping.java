@@ -4,7 +4,14 @@ package com.beingidly.litexl.chart;
  * Grouping mode for bar, column, line, and area charts.
  */
 public enum Grouping {
-    STANDARD, CLUSTERED, STACKED, PERCENT_STACKED;
+    /** Standard grouping (no overlap). */
+    STANDARD,
+    /** Clustered grouping (side-by-side). */
+    CLUSTERED,
+    /** Stacked grouping. */
+    STACKED,
+    /** Percent stacked grouping. */
+    PERCENT_STACKED;
 
     String xmlValue() {
         return switch (this) {

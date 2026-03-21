@@ -13,6 +13,7 @@ public record WriteProtection(
     boolean readOnlyRecommended,
     String userName
 ) {
+    /** Validates that userName is not null. */
     public WriteProtection {
         if (userName == null) {
             throw new IllegalArgumentException("userName cannot be null");

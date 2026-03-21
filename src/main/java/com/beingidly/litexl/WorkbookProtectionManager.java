@@ -109,6 +109,8 @@ public final class WorkbookProtectionManager {
 
     /**
      * Returns the protection options, or null if not protected.
+     *
+     * @return the protection options, or null
      */
     public @Nullable WorkbookProtection options() {
         return options;
@@ -116,6 +118,8 @@ public final class WorkbookProtectionManager {
 
     /**
      * Returns true if the workbook structure is protected.
+     *
+     * @return true if protected
      */
     public boolean isProtected() {
         return options != null;

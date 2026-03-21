@@ -36,6 +36,9 @@ import java.util.Random;
  */
 public class ComplexDataGenerator {
 
+    /** Creates a new generator with a fixed random seed. */
+    public ComplexDataGenerator() {}
+
     private static final int SUMMARY_ROWS = 100;
     private static final int SALES_ROWS = 3000;
     private static final int CUSTOMERS_ROWS = 3000;
@@ -60,6 +63,9 @@ public class ComplexDataGenerator {
 
     /**
      * Generates a complex workbook using litexl API.
+     *
+     * @param path the output file path
+     * @throws Exception if an error occurs during generation
      */
     public void generateLitexl(Path path) throws Exception {
         try (Workbook wb = Workbook.create()) {
@@ -357,6 +363,9 @@ public class ComplexDataGenerator {
 
     /**
      * Generates a complex workbook using Apache POI API.
+     *
+     * @param path the output file path
+     * @throws Exception if an error occurs during generation
      */
     public void generatePoi(Path path) throws Exception {
         try (XSSFWorkbook wb = new XSSFWorkbook()) {
@@ -844,6 +853,8 @@ public class ComplexDataGenerator {
 
     /**
      * Calculates the total number of cells generated.
+     *
+     * @return the total cell count across all sheets
      */
     public long calculateTotalCells() {
         return (long) SUMMARY_ROWS * SUMMARY_COLS

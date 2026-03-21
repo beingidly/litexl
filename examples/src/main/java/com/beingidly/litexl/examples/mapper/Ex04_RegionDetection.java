@@ -22,6 +22,16 @@ import java.util.List;
  */
 public class Ex04_RegionDetection {
 
+    /** Example runner. */
+    private Ex04_RegionDetection() {}
+
+    /**
+     * An employee row record.
+     *
+     * @param id         the employee ID
+     * @param name       the employee name
+     * @param department the department name
+     */
     @LitexlRow
     public record Employee(
         @LitexlColumn(index = 0, header = "ID")
@@ -34,13 +44,22 @@ public class Ex04_RegionDetection {
         String department
     ) {}
 
-    // Use AUTO region detection to find the data table automatically
+    /**
+     * A workbook record with AUTO region detection.
+     *
+     * @param employees the list of employees
+     */
     @LitexlWorkbook
     public record EmployeeReport(
         @LitexlSheet(name = "Employees", regionDetection = RegionDetection.AUTO)
         List<Employee> employees
     ) {}
 
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         // First, create an Excel file where data doesn't start at A1
         Path samplePath = createSampleFileWithOffset();

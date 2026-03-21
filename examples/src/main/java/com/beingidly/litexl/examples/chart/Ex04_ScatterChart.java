@@ -21,6 +21,14 @@ import java.nio.file.Path;
  */
 public class Ex04_ScatterChart {
 
+    /** Example runner. */
+    private Ex04_ScatterChart() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex04_scatter_chart.xlsx");
 

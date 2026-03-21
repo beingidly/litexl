@@ -20,6 +20,7 @@ public interface ReadExtension {
      *
      * @param ctx      the read context for accessing ZIP entries
      * @param workbook the workbook being read
+     * @throws IOException if an I/O error occurs
      */
     void read(ReadContext ctx, Workbook workbook) throws IOException;
 }

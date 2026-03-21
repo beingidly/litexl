@@ -4,9 +4,30 @@ package com.beingidly.litexl.chart.style;
  * Theme colors from the workbook's theme.
  */
 public enum ThemeColor {
-    DK1, LT1, DK2, LT2,
-    ACCENT1, ACCENT2, ACCENT3, ACCENT4, ACCENT5, ACCENT6,
-    HLINK, FOL_HLINK;
+    /** Dark 1 (typically black). */
+    DK1,
+    /** Light 1 (typically white). */
+    LT1,
+    /** Dark 2. */
+    DK2,
+    /** Light 2. */
+    LT2,
+    /** Accent color 1. */
+    ACCENT1,
+    /** Accent color 2. */
+    ACCENT2,
+    /** Accent color 3. */
+    ACCENT3,
+    /** Accent color 4. */
+    ACCENT4,
+    /** Accent color 5. */
+    ACCENT5,
+    /** Accent color 6. */
+    ACCENT6,
+    /** Hyperlink color. */
+    HLINK,
+    /** Followed hyperlink color. */
+    FOL_HLINK;
 
     String xmlValue() {
         return switch (this) {

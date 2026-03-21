@@ -18,6 +18,14 @@ import java.nio.file.Path;
  */
 public class Ex02_ReadWorkbook {
 
+    /** Example runner. */
+    private Ex02_ReadWorkbook() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         // First, create a sample file to read
         Path samplePath = createSampleFile();

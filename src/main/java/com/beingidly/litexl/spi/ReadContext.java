@@ -16,6 +16,7 @@ public interface ReadContext {
      *
      * @param path the entry path within the ZIP
      * @return an input stream, or null if the entry does not exist
+     * @throws IOException if an I/O error occurs
      */
     @Nullable InputStream openEntry(String path) throws IOException;
 
@@ -29,6 +30,8 @@ public interface ReadContext {
 
     /**
      * Returns all entry names in the ZIP.
+     *
+     * @return a set of entry names
      */
     Set<String> entryNames();
 }

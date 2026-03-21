@@ -58,6 +58,8 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Creates a new empty workbook.
+     *
+     * @return a new workbook
      */
     public static Workbook create() {
         return new Workbook();
@@ -65,6 +67,9 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Opens an existing workbook from a file.
+     *
+     * @param path the file path
+     * @return the opened workbook
      */
     public static Workbook open(Path path) {
         return open(path, null);
@@ -72,6 +77,10 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Opens an existing workbook from a file with a password.
+     *
+     * @param path the file path
+     * @param password the decryption password, or null
+     * @return the opened workbook
      */
     public static Workbook open(Path path, @Nullable String password) {
         if (!Files.exists(path)) {
@@ -86,6 +95,8 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Saves the workbook to a file.
+     *
+     * @param path the output file path
      */
     public void save(Path path) {
         save(path, null);
@@ -93,6 +104,9 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Saves the workbook to a file with encryption.
+     *
+     * @param path the output file path
+     * @param options the encryption options, or null for no encryption
      */
     public void save(Path path, @Nullable EncryptionOptions options) {
         ensureOpen();
@@ -145,6 +159,9 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Adds a new sheet to the workbook.
+     *
+     * @param name the sheet name
+     * @return the new sheet
      */
     public Sheet addSheet(String name) {
         ensureOpen();
@@ -166,6 +183,9 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Gets a sheet by index, or null if index is out of range.
+     *
+     * @param index the sheet index (zero-based)
+     * @return the sheet, or null
      */
     public @Nullable Sheet getSheet(int index) {
         ensureOpen();
@@ -177,6 +197,9 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Gets a sheet by name, or null if not found.
+     *
+     * @param name the sheet name
+     * @return the sheet, or null
      */
     public @Nullable Sheet getSheet(String name) {
         ensureOpen();
@@ -190,6 +213,8 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Removes a sheet by index.
+     *
+     * @param index the sheet index (zero-based)
      */
     public void removeSheet(int index) {
         ensureOpen();
@@ -201,6 +226,8 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Returns all sheets (unmodifiable).
+     *
+     * @return the list of sheets
      */
     public List<Sheet> sheets() {
         return Collections.unmodifiableList(sheets);
@@ -208,6 +235,8 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Returns the number of sheets.
+     *
+     * @return the sheet count
      */
     public int sheetCount() {
         return sheets.size();
@@ -215,6 +244,9 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Adds a style and returns its ID.
+     *
+     * @param style the style to add
+     * @return the style ID
      */
     public int addStyle(Style style) {
         ensureOpen();
@@ -224,6 +256,9 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Gets a style by ID, or null if not found.
+     *
+     * @param id the style ID
+     * @return the style, or null
      */
     public @Nullable Style getStyle(int id) {
         if (id < 0 || id >= styles.size()) {
@@ -234,6 +269,8 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Returns all styles (unmodifiable).
+     *
+     * @return the list of styles
      */
     public List<Style> styles() {
         return Collections.unmodifiableList(styles);
@@ -274,6 +311,8 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Returns the write protection settings, or null if not set.
+     *
+     * @return the write protection, or null
      */
     public @Nullable WriteProtection writeProtection() {
         return writeProtectionManager.protection();
@@ -281,6 +320,8 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Returns true if write protection is set.
+     *
+     * @return true if write protected
      */
     public boolean isWriteProtected() {
         return writeProtectionManager.isProtected();
@@ -288,6 +329,8 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Returns the write protection manager for advanced operations.
+     *
+     * @return the write protection manager
      */
     public WriteProtectionManager writeProtectionManager() {
         return writeProtectionManager;
@@ -341,6 +384,8 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Returns the workbook structure protection settings, or null if not protected.
+     *
+     * @return the workbook protection, or null
      */
     public @Nullable WorkbookProtection structureProtection() {
         return workbookProtectionManager.options();
@@ -348,6 +393,8 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Returns true if the workbook structure is protected.
+     *
+     * @return true if structure is protected
      */
     public boolean isStructureProtected() {
         return workbookProtectionManager.isProtected();
@@ -355,6 +402,8 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Returns the workbook protection manager for advanced operations.
+     *
+     * @return the workbook protection manager
      */
     public WorkbookProtectionManager workbookProtectionManager() {
         return workbookProtectionManager;
@@ -364,6 +413,9 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Adds a shared string and returns its index.
+     *
+     * @param value the string value
+     * @return the shared string index
      */
     public int addSharedString(String value) {
         Integer existing = sharedStringIndex.get(value);
@@ -378,6 +430,9 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Gets a shared string by index, or null if not found.
+     *
+     * @param index the shared string index
+     * @return the shared string, or null
      */
     public @Nullable String getSharedString(int index) {
         if (index < 0 || index >= sharedStrings.size()) {
@@ -388,6 +443,8 @@ public final class Workbook implements AutoCloseable {
 
     /**
      * Returns all shared strings (unmodifiable).
+     *
+     * @return the list of shared strings
      */
     public List<String> sharedStrings() {
         return Collections.unmodifiableList(sharedStrings);

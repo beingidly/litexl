@@ -18,9 +18,9 @@ public interface WriteExtension {
     /**
      * Called during [Content_Types].xml writing to register additional content types.
      *
-     * @param registry   the content type registry
-     * @param sheetCount the number of sheets in the workbook
-     * @param sheets     the sheets in the workbook
+     * @param registry the content type registry
+     * @param sheets   the sheets in the workbook
+     * @throws IOException if an I/O error occurs
      */
     void contributeContentTypes(ContentTypeRegistry registry,
                                 List<Sheet> sheets) throws IOException;
@@ -34,6 +34,7 @@ public interface WriteExtension {
      * @param xml      the current sheet's XML writer
      * @param sheet    the sheet being written
      * @param sheetNum the 1-based sheet number
+     * @throws IOException if an I/O error occurs
      */
     void writeSheetElements(XmlWriter xml, Sheet sheet, int sheetNum) throws IOException;
 
@@ -55,6 +56,7 @@ public interface WriteExtension {
      *
      * @param ctx    the write context for creating ZIP entries
      * @param sheets all sheets in the workbook
+     * @throws IOException if an I/O error occurs
      */
     void writeEntries(WriteContext ctx, List<Sheet> sheets) throws IOException;
 }

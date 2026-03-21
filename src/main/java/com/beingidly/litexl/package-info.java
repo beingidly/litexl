@@ -1,4 +1,3 @@
-@NullMarked
 /**
  * Lightweight Excel library for reading and writing XLSX files.
  *
@@ -33,6 +32,7 @@
  *
  * @see com.beingidly.litexl.Workbook
  */
+@NullMarked
 package com.beingidly.litexl;
 
 import org.jspecify.annotations.NullMarked;

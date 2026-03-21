@@ -4,7 +4,12 @@ package com.beingidly.litexl.chart;
  * Style for radar charts.
  */
 public enum RadarStyle {
-    STANDARD, MARKER, FILLED;
+    /** Standard radar chart. */
+    STANDARD,
+    /** Radar chart with markers. */
+    MARKER,
+    /** Filled radar chart. */
+    FILLED;
 
     String xmlValue() {
         return switch (this) {

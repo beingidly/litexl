@@ -19,6 +19,14 @@ import java.util.List;
  */
 public class Ex09_ChartReadWrite {
 
+    /** Example runner. */
+    private Ex09_ChartReadWrite() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex09_chart_read_write.xlsx");
 

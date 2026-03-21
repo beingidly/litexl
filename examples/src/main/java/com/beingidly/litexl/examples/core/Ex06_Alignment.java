@@ -20,6 +20,14 @@ import java.nio.file.Path;
  */
 public class Ex06_Alignment {
 
+    /** Example runner. */
+    private Ex06_Alignment() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex06_alignment.xlsx");
 

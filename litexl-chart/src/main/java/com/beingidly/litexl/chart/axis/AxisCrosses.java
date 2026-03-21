@@ -1,7 +1,15 @@
 package com.beingidly.litexl.chart.axis;
 
+/**
+ * Determines where the perpendicular axis crosses this axis.
+ */
 public enum AxisCrosses {
-    AUTO_ZERO, MIN, MAX;
+    /** Axis crosses at the automatic zero point. */
+    AUTO_ZERO,
+    /** Axis crosses at the minimum value. */
+    MIN,
+    /** Axis crosses at the maximum value. */
+    MAX;
 
     String xmlValue() {
         return switch (this) {

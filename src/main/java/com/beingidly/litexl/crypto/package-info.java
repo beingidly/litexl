@@ -1,4 +1,3 @@
-@NullMarked
 /**
  * Cryptographic utilities for Excel file encryption and decryption.
  *
@@ -9,6 +8,7 @@
  *   <li>CFB (Compound File Binary) format reading/writing</li>
  * </ul>
  */
+@NullMarked
 package com.beingidly.litexl.crypto;
 
 import org.jspecify.annotations.NullMarked;

@@ -106,6 +106,8 @@ public final class SheetProtectionManager {
 
     /**
      * Returns the protection options, or null if not protected.
+     *
+     * @return the protection options, or null
      */
     public @Nullable SheetProtection options() {
         return options;
@@ -113,6 +115,8 @@ public final class SheetProtectionManager {
 
     /**
      * Returns true if the sheet is protected.
+     *
+     * @return true if protected
      */
     public boolean isProtected() {
         return options != null;

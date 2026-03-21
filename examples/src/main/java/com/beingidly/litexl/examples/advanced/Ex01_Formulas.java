@@ -18,6 +18,14 @@ import java.nio.file.Path;
  */
 public class Ex01_Formulas {
 
+    /** Example runner. */
+    private Ex01_Formulas() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex01_formulas.xlsx");
 

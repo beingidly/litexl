@@ -20,6 +20,14 @@ import java.nio.file.Path;
  */
 public class Ex02_MergeCells {
 
+    /** Example runner. */
+    private Ex02_MergeCells() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex02_merge_cells.xlsx");
 

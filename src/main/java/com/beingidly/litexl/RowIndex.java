@@ -23,6 +23,8 @@ public final class RowIndex {
 
     /**
      * Returns a row index representing "no row".
+     *
+     * @return the singleton "none" row index
      */
     public static RowIndex none() {
         return NONE;
@@ -32,6 +34,7 @@ public final class RowIndex {
      * Returns a row index with the specified value.
      *
      * @param index the 0-based row index (must be non-negative)
+     * @return a new row index
      * @throws IllegalArgumentException if index is negative
      */
     public static RowIndex of(int index) {
@@ -43,6 +46,8 @@ public final class RowIndex {
 
     /**
      * Returns true if this represents an existing row.
+     *
+     * @return true if this row index exists
      */
     public boolean exists() {
         return this != NONE;
@@ -51,6 +56,7 @@ public final class RowIndex {
     /**
      * Returns the row index value.
      *
+     * @return the row index
      * @throws IllegalStateException if no row exists
      */
     public int getValue() {

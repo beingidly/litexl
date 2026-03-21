@@ -23,6 +23,8 @@ public final class ColumnIndex {
 
     /**
      * Returns a column index representing "no column".
+     *
+     * @return the singleton "none" column index
      */
     public static ColumnIndex none() {
         return NONE;
@@ -32,6 +34,7 @@ public final class ColumnIndex {
      * Returns a column index with the specified value.
      *
      * @param index the 0-based column index (must be non-negative)
+     * @return a new column index
      * @throws IllegalArgumentException if index is negative
      */
     public static ColumnIndex of(int index) {
@@ -43,6 +46,8 @@ public final class ColumnIndex {
 
     /**
      * Returns true if this represents an existing column.
+     *
+     * @return true if this column index exists
      */
     public boolean exists() {
         return this != NONE;
@@ -51,6 +56,7 @@ public final class ColumnIndex {
     /**
      * Returns the column index value.
      *
+     * @return the column index
      * @throws IllegalStateException if no column exists
      */
     public int getValue() {

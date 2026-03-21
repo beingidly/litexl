@@ -25,8 +25,15 @@ import java.util.List;
  */
 public class Ex03_StyleProvider {
 
-    // Header style provider - bold, blue background, white text
+    /** Example runner. */
+    private Ex03_StyleProvider() {}
+
+    /** Header style provider - bold, blue background, white text. */
     public static class HeaderStyle implements LitexlStyleProvider {
+
+        /** Creates a new {@code HeaderStyle}. */
+        public HeaderStyle() {}
+
         @Override
         public Style provide() {
             return Style.builder()
@@ -39,8 +46,12 @@ public class Ex03_StyleProvider {
         }
     }
 
-    // Currency style provider - number format with dollar sign
+    /** Currency style provider - number format with dollar sign. */
     public static class CurrencyStyle implements LitexlStyleProvider {
+
+        /** Creates a new {@code CurrencyStyle}. */
+        public CurrencyStyle() {}
+
         @Override
         public Style provide() {
             return Style.builder()
@@ -50,7 +61,13 @@ public class Ex03_StyleProvider {
         }
     }
 
-    // Row record with styled columns
+    /**
+     * A sales row record with styled columns.
+     *
+     * @param product  the product name
+     * @param quantity the quantity sold
+     * @param revenue  the revenue amount
+     */
     @LitexlRow
     public record SalesRecord(
         @LitexlColumn(index = 0, header = "Product")
@@ -66,12 +83,22 @@ public class Ex03_StyleProvider {
         double revenue
     ) {}
 
+    /**
+     * A workbook record containing sales data.
+     *
+     * @param sales the list of sales records
+     */
     @LitexlWorkbook
     public record SalesReport(
         @LitexlSheet(name = "Sales")
         List<SalesRecord> sales
     ) {}
 
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex03_style_provider.xlsx");
 

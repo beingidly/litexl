@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
  */
 public sealed interface CellValue {
 
+    /** An empty cell value. */
     record Empty() implements CellValue {
         @Override
         public CellType type() {
@@ -14,6 +15,11 @@ public sealed interface CellValue {
         }
     }
 
+    /**
+     * A string cell value.
+     *
+     * @param value the string content
+     */
     record Text(String value) implements CellValue {
         @Override
         public CellType type() {
@@ -21,6 +27,11 @@ public sealed interface CellValue {
         }
     }
 
+    /**
+     * A numeric cell value.
+     *
+     * @param value the numeric content
+     */
     record Number(double value) implements CellValue {
         @Override
         public CellType type() {
@@ -28,6 +39,11 @@ public sealed interface CellValue {
         }
     }
 
+    /**
+     * A boolean cell value.
+     *
+     * @param value the boolean content
+     */
     record Bool(boolean value) implements CellValue {
         @Override
         public CellType type() {
@@ -35,6 +51,11 @@ public sealed interface CellValue {
         }
     }
 
+    /**
+     * A date cell value.
+     *
+     * @param value the date-time content
+     */
     record Date(LocalDateTime value) implements CellValue {
         @Override
         public CellType type() {
@@ -42,7 +63,18 @@ public sealed interface CellValue {
         }
     }
 
+    /**
+     * A formula cell value.
+     *
+     * @param expression the formula expression
+     * @param cached the cached result value
+     */
     record Formula(String expression, CellValue cached) implements CellValue {
+        /**
+         * Creates a formula with no cached value.
+         *
+         * @param expression the formula expression
+         */
         public Formula(String expression) {
             this(expression, new Empty());
         }
@@ -53,6 +85,11 @@ public sealed interface CellValue {
         }
     }
 
+    /**
+     * An error cell value.
+     *
+     * @param code the error code
+     */
     record Error(String code) implements CellValue {
         @Override
         public CellType type() {
@@ -62,6 +99,8 @@ public sealed interface CellValue {
 
     /**
      * Returns the type of this cell value.
+     *
+     * @return the cell type
      */
     CellType type();
 }

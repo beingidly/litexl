@@ -1,7 +1,15 @@
 package com.beingidly.litexl.chart.style;
 
+/**
+ * Line cap styles.
+ */
 public enum LineCap {
-    FLAT("flat"), ROUND("rnd"), SQUARE("sq");
+    /** Flat line cap. */
+    FLAT("flat"),
+    /** Round line cap. */
+    ROUND("rnd"),
+    /** Square line cap. */
+    SQUARE("sq");
 
     private final String xmlValue;
     LineCap(String xmlValue) { this.xmlValue = xmlValue; }

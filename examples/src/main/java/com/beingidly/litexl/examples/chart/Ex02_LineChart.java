@@ -21,6 +21,14 @@ import java.nio.file.Path;
  */
 public class Ex02_LineChart {
 
+    /** Example runner. */
+    private Ex02_LineChart() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex02_line_chart.xlsx");
 

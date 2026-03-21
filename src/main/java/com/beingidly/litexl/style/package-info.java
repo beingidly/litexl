@@ -1,4 +1,3 @@
-@NullMarked
 /**
  * Cell styling utilities for Excel worksheets.
  *
@@ -10,6 +9,7 @@
  *   <li>Number formats</li>
  * </ul>
  */
+@NullMarked
 package com.beingidly.litexl.style;
 
 import org.jspecify.annotations.NullMarked;

@@ -20,6 +20,14 @@ import java.nio.file.Path;
  */
 public class Ex04_BasicStyling {
 
+    /** Example runner. */
+    private Ex04_BasicStyling() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex04_basic_styling.xlsx");
 

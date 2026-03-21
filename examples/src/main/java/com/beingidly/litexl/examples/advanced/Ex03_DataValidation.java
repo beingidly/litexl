@@ -21,6 +21,14 @@ import java.nio.file.Path;
  */
 public class Ex03_DataValidation {
 
+    /** Example runner. */
+    private Ex03_DataValidation() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex03_data_validation.xlsx");
 

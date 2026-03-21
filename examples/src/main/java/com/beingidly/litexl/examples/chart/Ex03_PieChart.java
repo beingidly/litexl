@@ -20,6 +20,14 @@ import java.nio.file.Path;
  */
 public class Ex03_PieChart {
 
+    /** Example runner. */
+    private Ex03_PieChart() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex03_pie_chart.xlsx");
 

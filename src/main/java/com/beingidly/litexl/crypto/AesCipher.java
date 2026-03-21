@@ -43,6 +43,7 @@ public final class AesCipher {
      * @param data the data to encrypt
      * @param iv initialization vector (16 bytes)
      * @return encrypted data
+     * @throws GeneralSecurityException if encryption fails
      */
     public byte[] encrypt(byte[] data, byte[] iv) throws GeneralSecurityException {
         return encrypt(data, 0, data.length, iv);
@@ -56,6 +57,7 @@ public final class AesCipher {
      * @param length number of bytes to encrypt
      * @param iv initialization vector (16 bytes)
      * @return encrypted data
+     * @throws GeneralSecurityException if encryption fails
      */
     public byte[] encrypt(byte[] data, int offset, int length, byte[] iv) throws GeneralSecurityException {
         IvParameterSpec ivSpec = new IvParameterSpec(iv);
@@ -77,6 +79,7 @@ public final class AesCipher {
      * @param data the data to encrypt (must be multiple of 16 bytes)
      * @param iv initialization vector (16 bytes)
      * @return encrypted data
+     * @throws GeneralSecurityException if encryption fails
      */
     public byte[] encryptNoPadding(byte[] data, byte[] iv) throws GeneralSecurityException {
         if (data.length % 16 != 0) {
@@ -95,6 +98,7 @@ public final class AesCipher {
      * @param output destination buffer (must have enough remaining space)
      * @param iv initialization vector (16 bytes)
      * @return number of bytes written to output
+     * @throws GeneralSecurityException if encryption fails
      */
     public int encrypt(ByteBuffer input, ByteBuffer output, byte[] iv) throws GeneralSecurityException {
         IvParameterSpec ivSpec = new IvParameterSpec(iv);
@@ -124,6 +128,7 @@ public final class AesCipher {
      * @param data the data to decrypt
      * @param iv initialization vector (16 bytes)
      * @return decrypted data
+     * @throws GeneralSecurityException if decryption fails
      */
     public byte[] decrypt(byte[] data, byte[] iv) throws GeneralSecurityException {
         IvParameterSpec ivSpec = new IvParameterSpec(iv);
@@ -139,6 +144,7 @@ public final class AesCipher {
      * @param length number of bytes to decrypt
      * @param iv initialization vector (16 bytes)
      * @return decrypted data
+     * @throws GeneralSecurityException if decryption fails
      */
     public byte[] decrypt(byte[] data, int offset, int length, byte[] iv) throws GeneralSecurityException {
         IvParameterSpec ivSpec = new IvParameterSpec(iv);
@@ -153,6 +159,7 @@ public final class AesCipher {
      * @param output destination buffer
      * @param iv initialization vector (16 bytes)
      * @return number of bytes written to output
+     * @throws GeneralSecurityException if decryption fails
      */
     public int decrypt(ByteBuffer input, ByteBuffer output, byte[] iv) throws GeneralSecurityException {
         IvParameterSpec ivSpec = new IvParameterSpec(iv);

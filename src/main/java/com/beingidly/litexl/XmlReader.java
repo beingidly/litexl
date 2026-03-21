@@ -12,13 +12,23 @@ public final class XmlReader implements AutoCloseable {
 
     private final XMLStreamReader reader;
 
+    /** XML event types. */
     public enum Event {
+        /** Start of an element. */
         START_ELEMENT,
+        /** End of an element. */
         END_ELEMENT,
+        /** Character data. */
         CHARACTERS,
+        /** End of document. */
         END_DOCUMENT
     }
 
+    /**
+     * Creates a new XML reader from the given input stream.
+     *
+     * @param input the input stream
+     */
     public XmlReader(InputStream input) {
         try {
             XMLInputFactory factory = XMLInputFactory.newInstance();
@@ -31,6 +41,11 @@ public final class XmlReader implements AutoCloseable {
         }
     }
 
+    /**
+     * Returns true if there are more XML events to read.
+     *
+     * @return true if more events available
+     */
     public boolean hasNext() {
         try {
             return reader.hasNext();
@@ -39,6 +54,11 @@ public final class XmlReader implements AutoCloseable {
         }
     }
 
+    /**
+     * Returns the next XML event.
+     *
+     * @return the next event
+     */
     public Event next() {
         try {
             while (reader.hasNext()) {
@@ -63,10 +83,21 @@ public final class XmlReader implements AutoCloseable {
         }
     }
 
+    /**
+     * Returns the local name of the current element.
+     *
+     * @return the local name
+     */
     public String getLocalName() {
         return reader.getLocalName();
     }
 
+    /**
+     * Returns the value of the given attribute, or null if not found.
+     *
+     * @param name the attribute name
+     * @return the attribute value, or null
+     */
     public @Nullable String getAttributeValue(String name) {
         // Try without namespace first
         String value = reader.getAttributeValue(null, name);
@@ -79,6 +110,11 @@ public final class XmlReader implements AutoCloseable {
         return value;
     }
 
+    /**
+     * Returns the text content of the current element.
+     *
+     * @return the element text
+     */
     public String getElementText() {
         try {
             return reader.getElementText();
@@ -87,6 +123,11 @@ public final class XmlReader implements AutoCloseable {
         }
     }
 
+    /**
+     * Returns the text of the current CHARACTERS event.
+     *
+     * @return the text content
+     */
     public String getText() {
         return reader.getText();
     }

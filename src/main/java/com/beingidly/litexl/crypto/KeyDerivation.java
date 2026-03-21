@@ -104,21 +104,25 @@ public final class KeyDerivation {
         (byte) 0x3b, (byte) 0x4b, (byte) 0x9e, (byte) 0x79
     };
 
+    /** Block key for deriving the password verifier value key. */
     public static final byte[] BLOCK_KEY_VERIFIER_VALUE = {
         (byte) 0xd7, (byte) 0xaa, (byte) 0x0f, (byte) 0x6d,
         (byte) 0x30, (byte) 0x61, (byte) 0x34, (byte) 0x4e
     };
 
+    /** Block key for deriving the encrypted key decryption key. */
     public static final byte[] BLOCK_KEY_ENCRYPTED_KEY = {
         (byte) 0x14, (byte) 0x6e, (byte) 0x0b, (byte) 0xe7,
         (byte) 0xab, (byte) 0xac, (byte) 0xd0, (byte) 0xd6
     };
 
+    /** Block key for deriving the data integrity HMAC key. */
     public static final byte[] BLOCK_KEY_DATA_INTEGRITY_HMAC_KEY = {
         (byte) 0x5f, (byte) 0xb2, (byte) 0xad, (byte) 0x01,
         (byte) 0x0c, (byte) 0xb9, (byte) 0xe1, (byte) 0xf6
     };
 
+    /** Block key for deriving the data integrity HMAC value key. */
     public static final byte[] BLOCK_KEY_DATA_INTEGRITY_HMAC_VALUE = {
         (byte) 0xa0, (byte) 0x67, (byte) 0x7f, (byte) 0x02,
         (byte) 0xb2, (byte) 0x2c, (byte) 0x84, (byte) 0x33

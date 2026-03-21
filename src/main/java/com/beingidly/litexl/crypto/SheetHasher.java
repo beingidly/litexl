@@ -106,6 +106,11 @@ public final class SheetHasher {
 
     /**
      * Sheet protection information.
+     *
+     * @param saltValue the Base64-encoded salt
+     * @param hashValue the Base64-encoded hash
+     * @param algorithmName the hash algorithm name (e.g. "SHA-512")
+     * @param spinCount the number of hash iterations used
      */
     public record SheetProtectionInfo(
         String saltValue,

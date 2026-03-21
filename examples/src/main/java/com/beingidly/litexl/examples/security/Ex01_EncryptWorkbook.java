@@ -16,6 +16,14 @@ import java.nio.file.Path;
  */
 public class Ex01_EncryptWorkbook {
 
+    /** Example runner. */
+    private Ex01_EncryptWorkbook() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex01_encrypted.xlsx");
         String password = "secret123";

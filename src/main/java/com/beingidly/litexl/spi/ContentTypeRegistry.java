@@ -12,6 +12,7 @@ public interface ContentTypeRegistry {
      *
      * @param extension   the file extension (e.g. "png")
      * @param contentType the MIME content type
+     * @throws IOException if an I/O error occurs
      */
     void addDefault(String extension, String contentType) throws IOException;
 
@@ -20,6 +21,7 @@ public interface ContentTypeRegistry {
      *
      * @param partName    the part name (e.g. "/xl/charts/chart1.xml")
      * @param contentType the MIME content type
+     * @throws IOException if an I/O error occurs
      */
     void addOverride(String partName, String contentType) throws IOException;
 }

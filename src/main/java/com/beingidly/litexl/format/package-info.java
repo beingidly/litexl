@@ -1,4 +1,3 @@
-@NullMarked
 /**
  * Formatting utilities for Excel worksheets.
  *
@@ -9,6 +8,7 @@
  *   <li>Data validation</li>
  * </ul>
  */
+@NullMarked
 package com.beingidly.litexl.format;
 
 import org.jspecify.annotations.NullMarked;

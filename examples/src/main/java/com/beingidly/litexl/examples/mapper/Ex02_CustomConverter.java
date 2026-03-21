@@ -21,7 +21,15 @@ import java.util.List;
  */
 public class Ex02_CustomConverter {
 
-    // Custom domain type: Money
+    /** Example runner. */
+    private Ex02_CustomConverter() {}
+
+    /**
+     * A money value with currency and amount.
+     *
+     * @param currency the currency code (e.g. "USD", "EUR")
+     * @param amount   the monetary amount
+     */
     public record Money(String currency, double amount) {
         @Override
         public String toString() {
@@ -29,8 +37,11 @@ public class Ex02_CustomConverter {
         }
     }
 
-    // Custom converter for Money type
+    /** Custom converter for Money type. */
     public static class MoneyConverter implements LitexlConverter<Money> {
+
+        /** Creates a new {@code MoneyConverter}. */
+        public MoneyConverter() {}
 
         @Override
         public Money fromCell(CellValue value) {
@@ -58,7 +69,13 @@ public class Ex02_CustomConverter {
         }
     }
 
-    // Row record using custom converter
+    /**
+     * A product row record using custom converter.
+     *
+     * @param name  the product name
+     * @param price the product price as a {@link Money} value
+     * @param stock the number of items in stock
+     */
     @LitexlRow
     public record Product(
         @LitexlColumn(index = 0, header = "Product Name")
@@ -71,12 +88,22 @@ public class Ex02_CustomConverter {
         int stock
     ) {}
 
+    /**
+     * A workbook record containing products.
+     *
+     * @param products the list of products in the catalog
+     */
     @LitexlWorkbook
     public record ProductCatalog(
         @LitexlSheet(name = "Products")
         List<Product> products
     ) {}
 
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex02_custom_converter.xlsx");
 

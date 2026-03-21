@@ -24,12 +24,22 @@ public final class Charts {
 
     private Charts() {}
 
-    /** Adds a chart to the sheet. */
+    /**
+     * Adds a chart to the sheet.
+     *
+     * @param sheet the target sheet
+     * @param chart the chart to add
+     */
     public static void add(Sheet sheet, Chart chart) {
         getOrCreate(sheet).add(chart);
     }
 
-    /** Returns all charts on the sheet (unmodifiable). */
+    /**
+     * Returns all charts on the sheet (unmodifiable).
+     *
+     * @param sheet the sheet to query
+     * @return an unmodifiable list of charts
+     */
     public static List<Chart> get(Sheet sheet) {
         if (!sheet.hasExtensionData(KEY)) {
             return List.of();
@@ -37,12 +47,21 @@ public final class Charts {
         return Collections.unmodifiableList(getOrCreate(sheet));
     }
 
-    /** Removes a chart by index. */
+    /**
+     * Removes a chart by index.
+     *
+     * @param sheet the sheet containing the chart
+     * @param index the index of the chart to remove
+     */
     public static void remove(Sheet sheet, int index) {
         getOrCreate(sheet).remove(index);
     }
 
-    /** Removes all charts from the sheet. */
+    /**
+     * Removes all charts from the sheet.
+     *
+     * @param sheet the sheet to clear
+     */
     public static void clear(Sheet sheet) {
         sheet.removeExtensionData(KEY);
     }

@@ -33,9 +33,18 @@ import java.util.Random;
  */
 public class ComplexCompare {
 
+    /** Benchmark runner. */
+    private ComplexCompare() {}
+
     private static final String PASSWORD = "benchmark123";
     private static final int MODIFY_CELLS = 300;
 
+    /**
+     * Runs the benchmark.
+     *
+     * @param args command-line arguments
+     * @throws Exception if an error occurs during benchmarking
+     */
     public static void main(String[] args) throws Exception {
         ComplexDataGenerator generator = new ComplexDataGenerator();
         long totalCells = generator.calculateTotalCells();

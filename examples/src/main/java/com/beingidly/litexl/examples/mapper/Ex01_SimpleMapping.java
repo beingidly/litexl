@@ -21,7 +21,16 @@ import java.util.List;
  */
 public class Ex01_SimpleMapping {
 
-    // Define a row record
+    /** Example runner. */
+    private Ex01_SimpleMapping() {}
+
+    /**
+     * A person row record.
+     *
+     * @param name  the person's name
+     * @param age   the person's age
+     * @param email the person's email address
+     */
     @LitexlRow
     public record Person(
         @LitexlColumn(index = 0, header = "Name")
@@ -34,13 +43,22 @@ public class Ex01_SimpleMapping {
         String email
     ) {}
 
-    // Define a workbook record
+    /**
+     * A workbook record containing people.
+     *
+     * @param people the list of people to include in the report
+     */
     @LitexlWorkbook
     public record PeopleReport(
         @LitexlSheet(name = "People")
         List<Person> people
     ) {}
 
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex01_simple_mapping.xlsx");
 

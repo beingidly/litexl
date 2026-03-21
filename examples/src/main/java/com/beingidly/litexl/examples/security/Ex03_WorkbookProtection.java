@@ -16,6 +16,14 @@ import java.nio.file.Path;
  */
 public class Ex03_WorkbookProtection {
 
+    /** Example runner. */
+    private Ex03_WorkbookProtection() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex03_workbook_protection.xlsx");
 

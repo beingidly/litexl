@@ -17,6 +17,11 @@ public final class WorkbookReader {
 
     private final MapperConfig config;
 
+    /**
+     * Creates a new workbook reader with the given config.
+     *
+     * @param config the mapper config
+     */
     public WorkbookReader(MapperConfig config) {
         this.config = config;
     }
@@ -24,6 +29,7 @@ public final class WorkbookReader {
     /**
      * Reads a workbook and maps it to the specified type.
      *
+     * @param <T> the target type
      * @param workbook the source workbook
      * @param type the target type (must be annotated with @LitexlWorkbook)
      * @return an instance of the target type populated with data from the workbook

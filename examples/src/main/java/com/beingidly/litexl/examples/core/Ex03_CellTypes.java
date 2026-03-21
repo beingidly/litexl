@@ -20,6 +20,14 @@ import java.time.LocalDateTime;
  */
 public class Ex03_CellTypes {
 
+    /** Example runner. */
+    private Ex03_CellTypes() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex03_cell_types.xlsx");
 

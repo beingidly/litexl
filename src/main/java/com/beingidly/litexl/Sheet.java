@@ -20,9 +20,12 @@ import java.util.TreeMap;
  */
 public final class Sheet {
 
+    /** Callback for iterating over rows. */
     @FunctionalInterface
     public interface RowVisitor {
         /**
+         * Visits a row during iteration.
+         *
          * @param row current row
          * @return true to continue iteration, false to stop
          */
@@ -44,6 +47,9 @@ public final class Sheet {
 
     /**
      * Creates a new sheet. Internal use only - use Workbook.addSheet() instead.
+     *
+     * @param name the sheet name
+     * @param index the sheet index
      * @hidden
      */
     public Sheet(String name, int index) {
@@ -60,6 +66,8 @@ public final class Sheet {
 
     /**
      * Returns the sheet name.
+     *
+     * @return the sheet name
      */
     public String name() {
         return name;
@@ -67,6 +75,8 @@ public final class Sheet {
 
     /**
      * Sets the sheet name.
+     *
+     * @param name the new sheet name
      */
     public void setName(String name) {
         if (name.isEmpty()) {
@@ -77,6 +87,8 @@ public final class Sheet {
 
     /**
      * Returns the sheet index (0-based).
+     *
+     * @return the sheet index
      */
     public int index() {
         return index;
@@ -90,6 +102,7 @@ public final class Sheet {
      *
      * @param row the 0-based row index
      * @param col the 0-based column index
+     * @return the cell
      * @throws IllegalArgumentException if indices are out of Excel's limits
      */
     public Cell cell(int row, int col) {
@@ -118,6 +131,10 @@ public final class Sheet {
 
     /**
      * Gets a cell, returning null if row or cell doesn't exist.
+     *
+     * @param row the 0-based row index
+     * @param col the 0-based column index
+     * @return the cell, or null
      */
     public @Nullable Cell getCell(int row, int col) {
         Row r = getRow(row);
@@ -128,6 +145,7 @@ public final class Sheet {
      * Gets a row in append-only streaming mode.
      *
      * @param rowNum the 0-based row index
+     * @return the row
      * @throws IllegalArgumentException if row index is out of Excel's limits
      */
     public Row row(int rowNum) {
@@ -174,6 +192,9 @@ public final class Sheet {
 
     /**
      * Gets a row, returning null if it doesn't exist.
+     *
+     * @param rowNum the 0-based row index
+     * @return the row, or null
      */
     public @Nullable Row getRow(int rowNum) {
         if (rowNum < 0) {
@@ -197,9 +218,11 @@ public final class Sheet {
 
     /**
      * Iterates rows in ascending row index order without keeping all rows in memory.
+     *
+     * @param visitor the row visitor callback
      */
     public void forEachRow(RowVisitor visitor) {
-        final boolean[] stopped = { false };
+        final boolean[] stopped = {false};
         rowStore.forEachRow(row -> {
             boolean keepGoing = visitor.visit(row);
             if (!keepGoing) {
@@ -218,6 +241,8 @@ public final class Sheet {
      *
      * <p>This allocates memory proportional to sheet size and is not recommended
      * for large sheets. Prefer {@link #forEachRow(RowVisitor)} for streaming access.</p>
+     *
+     * @return an unmodifiable map of row number to row
      */
     public Map<Integer, Row> rows() {
         Map<Integer, Row> result = new TreeMap<>();
@@ -230,6 +255,8 @@ public final class Sheet {
 
     /**
      * Returns the number of rows.
+     *
+     * @return the row count
      */
     public int rowCount() {
         return rowCount;
@@ -237,6 +264,8 @@ public final class Sheet {
 
     /**
      * Returns the first row index, or {@link RowIndex#none()} if no rows.
+     *
+     * @return the first row index
      */
     public RowIndex firstRow() {
         return rowCount == 0 ? RowIndex.none() : RowIndex.of(firstRow);
@@ -244,6 +273,8 @@ public final class Sheet {
 
     /**
      * Returns the last row index, or {@link RowIndex#none()} if no rows.
+     *
+     * @return the last row index
      */
     public RowIndex lastRow() {
         return rowCount == 0 ? RowIndex.none() : RowIndex.of(lastRow);
@@ -253,6 +284,8 @@ public final class Sheet {
 
     /**
      * Returns the format manager for this sheet.
+     *
+     * @return the sheet format
      */
     public SheetFormat format() {
         return format;
@@ -262,6 +295,8 @@ public final class Sheet {
 
     /**
      * Returns the protection manager for this sheet.
+     *
+     * @return the sheet protection manager
      */
     public SheetProtectionManager protectionManager() {
         return protectionManager;
@@ -284,6 +319,9 @@ public final class Sheet {
 
     /**
      * Returns extension data for the given key, or null if not present.
+     *
+     * @param key the extension key
+     * @return the stored data, or null
      */
     public @Nullable Object getExtensionData(String key) {
         return extensionData.get(key);
@@ -291,6 +329,9 @@ public final class Sheet {
 
     /**
      * Returns true if extension data exists for the given key.
+     *
+     * @param key the extension key
+     * @return true if data exists for the key
      */
     public boolean hasExtensionData(String key) {
         return extensionData.containsKey(key);
@@ -298,6 +339,8 @@ public final class Sheet {
 
     /**
      * Removes extension data for the given key.
+     *
+     * @param key the extension key
      */
     public void removeExtensionData(String key) {
         extensionData.remove(key);
@@ -307,6 +350,11 @@ public final class Sheet {
 
     /**
      * Merges a range of cells.
+     *
+     * @param r1 the start row index
+     * @param c1 the start column index
+     * @param r2 the end row index
+     * @param c2 the end column index
      */
     public void merge(int r1, int c1, int r2, int c2) {
         format.merge(r1, c1, r2, c2);
@@ -314,6 +362,8 @@ public final class Sheet {
 
     /**
      * Merges a range of cells.
+     *
+     * @param range the cell range to merge
      */
     public void merge(CellRange range) {
         format.merge(range);
@@ -321,6 +371,11 @@ public final class Sheet {
 
     /**
      * Unmerges a range of cells.
+     *
+     * @param r1 the start row index
+     * @param c1 the start column index
+     * @param r2 the end row index
+     * @param c2 the end column index
      */
     public void unmerge(int r1, int c1, int r2, int c2) {
         format.unmerge(r1, c1, r2, c2);
@@ -328,6 +383,8 @@ public final class Sheet {
 
     /**
      * Returns all merged regions (unmodifiable).
+     *
+     * @return the list of merged regions
      */
     public java.util.List<MergedRegion> mergedCells() {
         // Convert SheetFormat.MergedRegion to Sheet.MergedRegion for backward compatibility
@@ -340,6 +397,11 @@ public final class Sheet {
 
     /**
      * Sets an auto filter on the given range.
+     *
+     * @param r1 the start row index
+     * @param c1 the start column index
+     * @param r2 the end row index
+     * @param c2 the end column index
      */
     public void setAutoFilter(int r1, int c1, int r2, int c2) {
         format.setAutoFilter(r1, c1, r2, c2);
@@ -347,6 +409,8 @@ public final class Sheet {
 
     /**
      * Sets an auto filter on the given range.
+     *
+     * @param range the cell range for the filter
      */
     public void setAutoFilter(CellRange range) {
         format.setAutoFilter(range);
@@ -354,6 +418,8 @@ public final class Sheet {
 
     /**
      * Sets an auto filter with specified filter columns.
+     *
+     * @param filter the auto filter configuration
      */
     public void setAutoFilter(AutoFilter filter) {
         format.setAutoFilter(filter);
@@ -368,6 +434,8 @@ public final class Sheet {
 
     /**
      * Returns the auto filter, or null if not set.
+     *
+     * @return the auto filter, or null
      */
     public @Nullable AutoFilter autoFilter() {
         return format.autoFilter();
@@ -375,6 +443,8 @@ public final class Sheet {
 
     /**
      * Adds a conditional format.
+     *
+     * @param cf the conditional format to add
      */
     public void addConditionalFormat(ConditionalFormat cf) {
         format.addConditionalFormat(cf);
@@ -382,6 +452,8 @@ public final class Sheet {
 
     /**
      * Returns all conditional formats (unmodifiable).
+     *
+     * @return the list of conditional formats
      */
     public java.util.List<ConditionalFormat> conditionalFormats() {
         return format.conditionalFormats();
@@ -396,6 +468,8 @@ public final class Sheet {
 
     /**
      * Adds a data validation.
+     *
+     * @param dv the data validation to add
      */
     public void addValidation(DataValidation dv) {
         format.addValidation(dv);
@@ -403,6 +477,8 @@ public final class Sheet {
 
     /**
      * Returns all data validations (unmodifiable).
+     *
+     * @return the list of data validations
      */
     public java.util.List<DataValidation> validations() {
         return format.validations();
@@ -428,6 +504,9 @@ public final class Sheet {
 
     /**
      * Returns the width of a column, or {@link ColumnWidth#auto()} if not set.
+     *
+     * @param col the 0-based column index
+     * @return the column width
      */
     public ColumnWidth getColumnWidth(int col) {
         return format.getColumnWidth(col);
@@ -443,6 +522,8 @@ public final class Sheet {
 
     /**
      * Returns all column widths (unmodifiable).
+     *
+     * @return the column width map
      */
     public Map<Integer, Double> columnWidths() {
         return format.columnWidths();
@@ -450,6 +531,8 @@ public final class Sheet {
 
     /**
      * Sets whether this sheet is hidden.
+     *
+     * @param hidden true to hide the sheet
      */
     public void setHidden(boolean hidden) {
         format.setHidden(hidden);
@@ -457,15 +540,17 @@ public final class Sheet {
 
     /**
      * Returns true if this sheet is hidden.
+     *
+     * @return true if hidden
      */
     public boolean hidden() {
         return format.hidden();
     }
 
-    // === Convenience Methods (delegating to SheetProtectionManager) ===
-
     /**
-     * Protects the sheet without a password.
+     * Protects the sheet with the given options.
+     *
+     * @param options the protection options
      */
     public void protect(SheetProtection options) {
         protectionManager.protect(options);
@@ -473,6 +558,8 @@ public final class Sheet {
 
     /**
      * Returns the protection settings, or null if not protected.
+     *
+     * @return the sheet protection, or null
      */
     public @Nullable SheetProtection protection() {
         return protectionManager.options();
@@ -480,6 +567,8 @@ public final class Sheet {
 
     /**
      * Returns true if the sheet is protected.
+     *
+     * @return true if protected
      */
     public boolean isProtected() {
         return protectionManager.isProtected();
@@ -527,8 +616,18 @@ public final class Sheet {
 
     /**
      * Represents a merged cell region.
+     *
+     * @param startRow the first row index (zero-based)
+     * @param startCol the first column index (zero-based)
+     * @param endRow the last row index (zero-based, inclusive)
+     * @param endCol the last column index (zero-based, inclusive)
      */
     public record MergedRegion(int startRow, int startCol, int endRow, int endCol) {
+        /**
+         * Converts this merged region to a CellRange.
+         *
+         * @return the cell range
+         */
         public CellRange toRange() {
             return CellRange.of(startRow, startCol, endRow, endCol);
         }

@@ -11,14 +11,31 @@ import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Reflection utilities for the object mapper.
+ */
 public final class ReflectionHelper {
 
     private ReflectionHelper() {}
 
+    /**
+     * Returns true if the given class is a record type.
+     *
+     * @param clazz the class to check
+     * @return true if the class is a record
+     */
     public static boolean isRecord(Class<?> clazz) {
         return clazz.isRecord();
     }
 
+    /**
+     * Creates an instance of the given class.
+     *
+     * @param <T> the type to create
+     * @param clazz the class
+     * @param args constructor arguments (used for records)
+     * @return a new instance
+     */
     public static <T> T createInstance(Class<T> clazz, Object[] args) {
         try {
             if (clazz.isRecord()) {
@@ -48,6 +65,13 @@ public final class ReflectionHelper {
         return constructor.newInstance();
     }
 
+    /**
+     * Returns fields annotated with the given annotation.
+     *
+     * @param clazz the class to inspect
+     * @param annotation the annotation to look for
+     * @return list of annotated fields
+     */
     public static List<Field> getAnnotatedFields(Class<?> clazz, Class<? extends Annotation> annotation) {
         var result = new ArrayList<Field>();
 
@@ -73,6 +97,13 @@ public final class ReflectionHelper {
         return result;
     }
 
+    /**
+     * Sets a field value on the given object.
+     *
+     * @param obj the target object
+     * @param field the field to set
+     * @param value the value to assign
+     */
     public static void setFieldValue(Object obj, Field field, @Nullable Object value) {
         try {
             field.setAccessible(true);
@@ -82,6 +113,13 @@ public final class ReflectionHelper {
         }
     }
 
+    /**
+     * Gets a field value from the given object.
+     *
+     * @param obj the source object
+     * @param field the field to read
+     * @return the field value, or null
+     */
     public static @Nullable Object getFieldValue(Object obj, Field field) {
         try {
             field.setAccessible(true);
@@ -91,6 +129,12 @@ public final class ReflectionHelper {
         }
     }
 
+    /**
+     * Returns the generic element type of a List field.
+     *
+     * @param field the list field
+     * @return the element type
+     */
     public static Class<?> getGenericListType(Field field) {
         var genericType = field.getGenericType();
         if (genericType instanceof ParameterizedType pt) {
@@ -102,10 +146,22 @@ public final class ReflectionHelper {
         throw new LitexlMapperException("Cannot determine generic type for field: " + field.getName());
     }
 
+    /**
+     * Returns true if the field type is assignable to List.
+     *
+     * @param field the field to check
+     * @return true if the field is a list
+     */
     public static boolean isList(Field field) {
         return List.class.isAssignableFrom(field.getType());
     }
 
+    /**
+     * Returns the first type argument from a parameterized type.
+     *
+     * @param genericType the generic type
+     * @return the first type argument
+     */
     public static Class<?> getGenericType(Type genericType) {
         if (genericType instanceof ParameterizedType pt) {
             Type[] typeArgs = pt.getActualTypeArguments();
@@ -116,6 +172,12 @@ public final class ReflectionHelper {
         throw new LitexlMapperException("Cannot determine generic type for: " + genericType);
     }
 
+    /**
+     * Returns true if the row contains only empty cells.
+     *
+     * @param row the row to check
+     * @return true if all cells are empty
+     */
     public static boolean isEmptyRow(Row row) {
         for (Cell cell : row.cells().values()) {
             if (cell.type() != CellType.EMPTY) {

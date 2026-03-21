@@ -21,7 +21,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+
 import java.util.ServiceLoader;
 
 /**
@@ -862,7 +862,9 @@ final class XlsxWriter implements Closeable {
         EncryptionData encryptionData = generateEncryptionData();
 
         try (InputStream xlsxIn = Files.newInputStream(xlsxTempFile);
-             FileChannel fc = FileChannel.open(destPath, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+             FileChannel fc = FileChannel.open(destPath,
+                     StandardOpenOption.READ, StandardOpenOption.WRITE,
+                     StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
              CfbWriter cfbWriter = new CfbWriter(
                  fc,
                  encryptionData.encryptionInfo(),
@@ -885,7 +887,9 @@ final class XlsxWriter implements Closeable {
         try {
             // Write to temp CFB file via MappedByteBuffer
             try (InputStream xlsxIn = Files.newInputStream(xlsxTempFile);
-                 FileChannel fc = FileChannel.open(cfbTempFile, StandardOpenOption.WRITE, StandardOpenOption.READ, StandardOpenOption.CREATE);
+                 FileChannel fc = FileChannel.open(cfbTempFile,
+                         StandardOpenOption.WRITE, StandardOpenOption.READ,
+                         StandardOpenOption.CREATE);
                  CfbWriter cfbWriter = new CfbWriter(
                      fc,
                      encryptionData.encryptionInfo(),

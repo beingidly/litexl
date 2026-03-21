@@ -17,6 +17,14 @@ import java.nio.file.Path;
  */
 public class Ex01_CreateWorkbook {
 
+    /** Example runner. */
+    private Ex01_CreateWorkbook() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex01_create_workbook.xlsx");
 

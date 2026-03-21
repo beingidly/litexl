@@ -14,6 +14,11 @@ import java.util.List;
  */
 public final class WorkbookWriter {
 
+    /**
+     * Creates a new workbook writer with the given config.
+     *
+     * @param config the mapper config
+     */
     @SuppressWarnings("unused")
     public WorkbookWriter(MapperConfig config) {
         // config reserved for future extensibility

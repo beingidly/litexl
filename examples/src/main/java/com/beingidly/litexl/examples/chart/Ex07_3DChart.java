@@ -20,6 +20,14 @@ import java.nio.file.Path;
  */
 public class Ex07_3DChart {
 
+    /** Example runner. */
+    private Ex07_3DChart() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex07_3d_chart.xlsx");
 

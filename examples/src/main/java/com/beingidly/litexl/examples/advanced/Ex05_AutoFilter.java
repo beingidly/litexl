@@ -17,6 +17,14 @@ import java.nio.file.Path;
  */
 public class Ex05_AutoFilter {
 
+    /** Example runner. */
+    private Ex05_AutoFilter() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex05_autofilter.xlsx");
 

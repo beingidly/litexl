@@ -72,6 +72,8 @@ public final class WriteProtectionManager {
 
     /**
      * Returns the write protection settings, or null if not set.
+     *
+     * @return the write protection, or null
      */
     public @Nullable WriteProtection protection() {
         return protection;
@@ -79,6 +81,8 @@ public final class WriteProtectionManager {
 
     /**
      * Returns true if write protection is set.
+     *
+     * @return true if write protected
      */
     public boolean isProtected() {
         return protection != null;

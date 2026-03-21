@@ -1,5 +1,13 @@
 package com.beingidly.litexl.chart.style;
 
+/**
+ * Line join styles.
+ */
 public enum LineJoin {
-    ROUND, BEVEL, MITER
+    /** Round join. */
+    ROUND,
+    /** Bevel join. */
+    BEVEL,
+    /** Miter join. */
+    MITER
 }

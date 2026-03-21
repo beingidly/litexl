@@ -23,6 +23,14 @@ import java.util.List;
  */
 public class Ex06_StyledChart {
 
+    /** Example runner. */
+    private Ex06_StyledChart() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex06_styled_chart.xlsx");
 

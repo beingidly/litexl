@@ -18,6 +18,14 @@ import java.nio.file.Path;
  */
 public class Ex02_SheetProtection {
 
+    /** Example runner. */
+    private Ex02_SheetProtection() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex02_sheet_protection.xlsx");
 

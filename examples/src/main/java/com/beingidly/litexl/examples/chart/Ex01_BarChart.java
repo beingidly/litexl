@@ -22,6 +22,14 @@ import java.util.List;
  */
 public class Ex01_BarChart {
 
+    /** Example runner. */
+    private Ex01_BarChart() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex01_bar_chart.xlsx");
 

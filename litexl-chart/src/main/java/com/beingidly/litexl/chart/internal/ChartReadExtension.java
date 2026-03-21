@@ -19,6 +19,9 @@ import java.util.*;
  */
 public final class ChartReadExtension implements ReadExtension {
 
+    /** Creates a new chart read extension. */
+    public ChartReadExtension() {}
+
     @Override
     public void read(ReadContext ctx, Workbook workbook) throws IOException {
         for (int i = 0; i < workbook.sheetCount(); i++) {

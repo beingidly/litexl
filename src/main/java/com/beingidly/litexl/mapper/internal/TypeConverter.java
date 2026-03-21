@@ -8,6 +8,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Set;
 
+/**
+ * Converts between cell values and standard Java types.
+ */
 public final class TypeConverter {
 
     private static final Set<Class<?>> SUPPORTED_TYPES = Set.of(
@@ -23,14 +26,37 @@ public final class TypeConverter {
 
     private TypeConverter() {}
 
+    /**
+     * Returns true if the given type is supported for conversion.
+     *
+     * @param type the type to check
+     * @return true if supported
+     */
     public static boolean isSupported(Class<?> type) {
         return SUPPORTED_TYPES.contains(type);
     }
 
+    /**
+     * Converts a cell value to the target type using default date format.
+     *
+     * @param <T> the target type
+     * @param value the cell value
+     * @param type the target class
+     * @return the converted value, or null
+     */
     public static <T> @Nullable T fromCell(CellValue value, Class<T> type) {
         return fromCell(value, type, null);
     }
 
+    /**
+     * Converts a cell value to the target type with an optional date format.
+     *
+     * @param <T> the target type
+     * @param value the cell value
+     * @param type the target class
+     * @param dateFormat the date format pattern, or null
+     * @return the converted value, or null
+     */
     @SuppressWarnings("unchecked")
     public static <T> @Nullable T fromCell(CellValue value, Class<T> type, @Nullable String dateFormat) {
         if (value instanceof CellValue.Empty) {
@@ -65,6 +91,13 @@ public final class TypeConverter {
         throw new IllegalArgumentException("Unsupported type: " + type);
     }
 
+    /**
+     * Converts a Java value to a cell value.
+     *
+     * @param value the Java value, or null
+     * @param type the source type
+     * @return the cell value
+     */
     public static CellValue toCell(@Nullable Object value, Class<?> type) {
         if (value == null) {
             return new CellValue.Empty();

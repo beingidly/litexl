@@ -24,6 +24,8 @@ public final class Cell {
 
     /**
      * Returns the column index (0-based).
+     *
+     * @return the column index
      */
     public int column() {
         return column;
@@ -31,6 +33,8 @@ public final class Cell {
 
     /**
      * Returns the cell type.
+     *
+     * @return the cell type
      */
     public CellType type() {
         return value.type();
@@ -38,6 +42,8 @@ public final class Cell {
 
     /**
      * Returns the raw cell value.
+     *
+     * @return the cell value
      */
     public CellValue value() {
         return value;
@@ -45,6 +51,8 @@ public final class Cell {
 
     /**
      * Returns the string value, or null if not a string cell.
+     *
+     * @return the string value, or null
      */
     public @Nullable String string() {
         return value instanceof CellValue.Text(String value1) ? value1 : null;
@@ -52,6 +60,8 @@ public final class Cell {
 
     /**
      * Returns the numeric value, or 0 if not a number cell.
+     *
+     * @return the numeric value, or 0
      */
     public double number() {
         return value instanceof CellValue.Number(double value1) ? value1 : 0.0;
@@ -59,6 +69,8 @@ public final class Cell {
 
     /**
      * Returns the boolean value, or false if not a boolean cell.
+     *
+     * @return the boolean value, or false
      */
     public boolean bool() {
         return value instanceof CellValue.Bool(boolean value1) && value1;
@@ -66,6 +78,8 @@ public final class Cell {
 
     /**
      * Returns the date value, or null if not a date cell.
+     *
+     * @return the date value, or null
      */
     public @Nullable LocalDateTime date() {
         return value instanceof CellValue.Date(LocalDateTime value1) ? value1 : null;
@@ -73,6 +87,8 @@ public final class Cell {
 
     /**
      * Returns the formula expression, or null if not a formula cell.
+     *
+     * @return the formula expression, or null
      */
     public @Nullable String formula() {
         return value instanceof CellValue.Formula f ? f.expression() : null;
@@ -80,6 +96,8 @@ public final class Cell {
 
     /**
      * Returns the error code, or null if not an error cell.
+     *
+     * @return the error code, or null
      */
     public @Nullable String error() {
         return value instanceof CellValue.Error(String code) ? code : null;
@@ -87,6 +105,9 @@ public final class Cell {
 
     /**
      * Sets the cell value to a string.
+     *
+     * @param value the string value, or null to clear
+     * @return this cell for chaining
      */
     public Cell set(@Nullable String value) {
         this.value = value == null ? new CellValue.Empty() : new CellValue.Text(value);
@@ -95,6 +116,9 @@ public final class Cell {
 
     /**
      * Sets the cell value to a number.
+     *
+     * @param value the numeric value
+     * @return this cell for chaining
      */
     public Cell set(double value) {
         this.value = new CellValue.Number(value);
@@ -103,6 +127,9 @@ public final class Cell {
 
     /**
      * Sets the cell value to a boolean.
+     *
+     * @param value the boolean value
+     * @return this cell for chaining
      */
     public Cell set(boolean value) {
         this.value = new CellValue.Bool(value);
@@ -111,6 +138,9 @@ public final class Cell {
 
     /**
      * Sets the cell value to a date.
+     *
+     * @param value the date value, or null to clear
+     * @return this cell for chaining
      */
     public Cell set(@Nullable LocalDateTime value) {
         this.value = value == null ? new CellValue.Empty() : new CellValue.Date(value);
@@ -119,6 +149,9 @@ public final class Cell {
 
     /**
      * Sets the cell value to a formula.
+     *
+     * @param expression the formula expression, or null to clear
+     * @return this cell for chaining
      */
     public Cell setFormula(@Nullable String expression) {
         if (expression == null) {
@@ -131,6 +164,8 @@ public final class Cell {
 
     /**
      * Sets the cell to empty.
+     *
+     * @return this cell for chaining
      */
     public Cell setEmpty() {
         this.value = new CellValue.Empty();
@@ -139,6 +174,9 @@ public final class Cell {
 
     /**
      * Sets the cell value directly.
+     *
+     * @param value the cell value, or null to clear
+     * @return this cell for chaining
      */
     public Cell setValue(@Nullable CellValue value) {
         this.value = value == null ? new CellValue.Empty() : value;
@@ -147,6 +185,9 @@ public final class Cell {
 
     /**
      * Sets the style ID.
+     *
+     * @param styleId the style identifier
+     * @return this cell for chaining
      */
     public Cell style(int styleId) {
         this.styleId = styleId;
@@ -155,6 +196,8 @@ public final class Cell {
 
     /**
      * Returns the style ID.
+     *
+     * @return the style identifier
      */
     public int styleId() {
         return styleId;
@@ -162,6 +205,8 @@ public final class Cell {
 
     /**
      * Returns the cell value as a raw object (String, Double, Boolean, LocalDateTime, or null).
+     *
+     * @return the raw value, or null if empty
      */
     public @Nullable Object rawValue() {
         return switch (value) {

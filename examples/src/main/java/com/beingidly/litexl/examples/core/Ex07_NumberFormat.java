@@ -20,6 +20,14 @@ import java.time.LocalDateTime;
  */
 public class Ex07_NumberFormat {
 
+    /** Example runner. */
+    private Ex07_NumberFormat() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex07_number_format.xlsx");
 

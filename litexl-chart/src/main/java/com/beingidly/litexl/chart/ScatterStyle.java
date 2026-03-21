@@ -4,7 +4,16 @@ package com.beingidly.litexl.chart;
  * Style for scatter (XY) charts.
  */
 public enum ScatterStyle {
-    MARKER, LINE, LINE_MARKER, SMOOTH, SMOOTH_MARKER;
+    /** Markers only. */
+    MARKER,
+    /** Lines only. */
+    LINE,
+    /** Lines with markers. */
+    LINE_MARKER,
+    /** Smooth lines only. */
+    SMOOTH,
+    /** Smooth lines with markers. */
+    SMOOTH_MARKER;
 
     String xmlValue() {
         return switch (this) {

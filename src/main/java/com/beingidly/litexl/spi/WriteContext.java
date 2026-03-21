@@ -15,6 +15,7 @@ public interface WriteContext {
      *
      * @param path the entry path within the ZIP (e.g. "xl/charts/chart1.xml")
      * @return an output stream for writing entry content
+     * @throws IOException if an I/O error occurs
      */
     OutputStream newEntry(String path) throws IOException;
 }

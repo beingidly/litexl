@@ -23,6 +23,8 @@ public final class ColumnWidth {
 
     /**
      * Returns a column width representing auto-size.
+     *
+     * @return the singleton auto-size column width
      */
     public static ColumnWidth auto() {
         return AUTO;
@@ -32,6 +34,7 @@ public final class ColumnWidth {
      * Returns a column width with the specified value.
      *
      * @param width the width in characters (must be positive)
+     * @return a new column width
      * @throws IllegalArgumentException if width is not positive
      */
     public static ColumnWidth of(double width) {
@@ -43,6 +46,8 @@ public final class ColumnWidth {
 
     /**
      * Returns true if this represents auto-sized width.
+     *
+     * @return true if auto-sized
      */
     public boolean isAuto() {
         return this == AUTO;
@@ -51,6 +56,7 @@ public final class ColumnWidth {
     /**
      * Returns the width value.
      *
+     * @return the width in characters
      * @throws IllegalStateException if this is auto-sized
      */
     public double getValue() {

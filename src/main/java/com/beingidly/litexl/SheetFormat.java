@@ -37,6 +37,11 @@ public final class SheetFormat {
 
     /**
      * Merges a range of cells.
+     *
+     * @param r1 the start row index
+     * @param c1 the start column index
+     * @param r2 the end row index
+     * @param c2 the end column index
      */
     public void merge(int r1, int c1, int r2, int c2) {
         mergedCells.add(new MergedRegion(r1, c1, r2, c2));
@@ -44,6 +49,8 @@ public final class SheetFormat {
 
     /**
      * Merges a range of cells.
+     *
+     * @param range the cell range to merge
      */
     public void merge(CellRange range) {
         mergedCells.add(new MergedRegion(range.startRow(), range.startCol(), range.endRow(), range.endCol()));
@@ -51,6 +58,11 @@ public final class SheetFormat {
 
     /**
      * Unmerges a range of cells.
+     *
+     * @param r1 the start row index
+     * @param c1 the start column index
+     * @param r2 the end row index
+     * @param c2 the end column index
      */
     public void unmerge(int r1, int c1, int r2, int c2) {
         mergedCells.removeIf(m ->
@@ -61,6 +73,8 @@ public final class SheetFormat {
 
     /**
      * Returns all merged regions (unmodifiable).
+     *
+     * @return the list of merged regions
      */
     public List<MergedRegion> mergedCells() {
         return Collections.unmodifiableList(mergedCells);
@@ -70,6 +84,11 @@ public final class SheetFormat {
 
     /**
      * Sets an auto filter on the given range.
+     *
+     * @param r1 the start row index
+     * @param c1 the start column index
+     * @param r2 the end row index
+     * @param c2 the end column index
      */
     public void setAutoFilter(int r1, int c1, int r2, int c2) {
         this.autoFilter = new AutoFilter(CellRange.of(r1, c1, r2, c2), List.of());
@@ -77,6 +96,8 @@ public final class SheetFormat {
 
     /**
      * Sets an auto filter on the given range.
+     *
+     * @param range the cell range for the filter
      */
     public void setAutoFilter(CellRange range) {
         this.autoFilter = new AutoFilter(range, List.of());
@@ -84,6 +105,8 @@ public final class SheetFormat {
 
     /**
      * Sets an auto filter with specified filter columns.
+     *
+     * @param filter the auto filter configuration
      */
     public void setAutoFilter(AutoFilter filter) {
         this.autoFilter = filter;
@@ -98,6 +121,8 @@ public final class SheetFormat {
 
     /**
      * Returns the auto filter, or null if not set.
+     *
+     * @return the auto filter, or null
      */
     public @Nullable AutoFilter autoFilter() {
         return autoFilter;
@@ -107,6 +132,8 @@ public final class SheetFormat {
 
     /**
      * Adds a conditional format.
+     *
+     * @param cf the conditional format to add
      */
     public void addConditionalFormat(ConditionalFormat cf) {
         conditionalFormats.add(cf);
@@ -114,6 +141,8 @@ public final class SheetFormat {
 
     /**
      * Returns all conditional formats (unmodifiable).
+     *
+     * @return the list of conditional formats
      */
     public List<ConditionalFormat> conditionalFormats() {
         return Collections.unmodifiableList(conditionalFormats);
@@ -130,6 +159,8 @@ public final class SheetFormat {
 
     /**
      * Adds a data validation.
+     *
+     * @param dv the data validation to add
      */
     public void addValidation(DataValidation dv) {
         validations.add(dv);
@@ -137,6 +168,8 @@ public final class SheetFormat {
 
     /**
      * Returns all data validations (unmodifiable).
+     *
+     * @return the list of data validations
      */
     public List<DataValidation> validations() {
         return Collections.unmodifiableList(validations);
@@ -165,6 +198,9 @@ public final class SheetFormat {
 
     /**
      * Returns the width of a column, or {@link ColumnWidth#auto()} if not set.
+     *
+     * @param col the 0-based column index
+     * @return the column width
      */
     public ColumnWidth getColumnWidth(int col) {
         Double width = columnWidths.get(col);
@@ -181,6 +217,8 @@ public final class SheetFormat {
 
     /**
      * Returns all column widths (unmodifiable).
+     *
+     * @return the column width map
      */
     public Map<Integer, Double> columnWidths() {
         return Collections.unmodifiableMap(columnWidths);
@@ -190,6 +228,8 @@ public final class SheetFormat {
 
     /**
      * Sets whether this sheet is hidden.
+     *
+     * @param hidden true to hide the sheet
      */
     public void setHidden(boolean hidden) {
         this.hidden = hidden;
@@ -197,6 +237,8 @@ public final class SheetFormat {
 
     /**
      * Returns true if this sheet is hidden.
+     *
+     * @return true if hidden
      */
     public boolean hidden() {
         return hidden;
@@ -204,8 +246,18 @@ public final class SheetFormat {
 
     /**
      * Represents a merged cell region.
+     *
+     * @param startRow the first row index (zero-based)
+     * @param startCol the first column index (zero-based)
+     * @param endRow the last row index (zero-based, inclusive)
+     * @param endCol the last column index (zero-based, inclusive)
      */
     public record MergedRegion(int startRow, int startCol, int endRow, int endCol) {
+        /**
+         * Converts this merged region to a CellRange.
+         *
+         * @return the cell range
+         */
         public CellRange toRange() {
             return CellRange.of(startRow, startCol, endRow, endCol);
         }

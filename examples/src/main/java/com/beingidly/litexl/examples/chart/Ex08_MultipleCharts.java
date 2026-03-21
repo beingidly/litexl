@@ -23,6 +23,14 @@ import java.util.List;
  */
 public class Ex08_MultipleCharts {
 
+    /** Example runner. */
+    private Ex08_MultipleCharts() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex08_multiple_charts.xlsx");
 

@@ -15,6 +15,8 @@ public record WorkbookProtection(
 ) {
     /**
      * Returns default protection settings (structure locked, windows unlocked).
+     *
+     * @return the default protection settings
      */
     public static WorkbookProtection defaults() {
         return new WorkbookProtection(true, false);
@@ -22,25 +24,44 @@ public record WorkbookProtection(
 
     /**
      * Returns a builder for customizing protection.
+     *
+     * @return a new builder
      */
     public static Builder builder() {
         return new Builder();
     }
 
+    /** Builder for customizing workbook protection settings. */
     public static class Builder {
+        /** Creates a new builder with default settings. */
+        public Builder() {}
         private boolean lockStructure = true;
         private boolean lockWindows = false;
 
+        /**
+         * Sets structure locking.
+         * @param value true to lock structure
+         * @return this builder
+         */
         public Builder lockStructure(boolean value) {
             this.lockStructure = value;
             return this;
         }
 
+        /**
+         * Sets window locking.
+         * @param value true to lock windows
+         * @return this builder
+         */
         public Builder lockWindows(boolean value) {
             this.lockWindows = value;
             return this;
         }
 
+        /**
+         * Builds the protection settings.
+         * @return a new WorkbookProtection
+         */
         public WorkbookProtection build() {
             return new WorkbookProtection(lockStructure, lockWindows);
         }

@@ -217,6 +217,11 @@ public final class AgileEncryptor {
 
     /**
      * Result of encryption containing all necessary components.
+     *
+     * @param encryptionInfoWithData the combined encryption info header and encrypted data
+     * @param encryptedData the encrypted data payload
+     * @param encryptionKey the generated encryption key
+     * @param keyDataSalt the salt used for key data
      */
     public record EncryptionResult(
         ByteBuffer encryptionInfoWithData,

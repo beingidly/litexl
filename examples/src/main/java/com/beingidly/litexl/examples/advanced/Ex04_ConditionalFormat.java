@@ -19,6 +19,14 @@ import java.nio.file.Path;
  */
 public class Ex04_ConditionalFormat {
 
+    /** Example runner. */
+    private Ex04_ConditionalFormat() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex04_conditional_format.xlsx");
 

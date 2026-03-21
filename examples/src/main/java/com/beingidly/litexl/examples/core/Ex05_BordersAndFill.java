@@ -19,6 +19,14 @@ import java.nio.file.Path;
  */
 public class Ex05_BordersAndFill {
 
+    /** Example runner. */
+    private Ex05_BordersAndFill() {}
+
+    /**
+     * Runs the example.
+     *
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         Path outputPath = ExampleUtils.tempFile("ex05_borders_fill.xlsx");
 

@@ -33,12 +33,20 @@ public enum ChartType {
     /** 3D pie chart. */
     PIE_3D;
 
-    /** Returns true if this is a 3D chart type. */
+    /**
+     * Returns true if this is a 3D chart type.
+     *
+     * @return true if 3D
+     */
     public boolean is3D() {
         return name().endsWith("_3D");
     }
 
-    /** Returns true if this chart type uses axes. */
+    /**
+     * Returns true if this chart type uses axes.
+     *
+     * @return true if the chart has axes
+     */
     public boolean hasAxes() {
         return this != PIE && this != PIE_3D && this != DOUGHNUT;
     }

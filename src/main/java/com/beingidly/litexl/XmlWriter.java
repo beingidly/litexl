@@ -11,6 +11,12 @@ public final class XmlWriter implements AutoCloseable {
 
     private final XMLStreamWriter writer;
 
+    /**
+     * Creates a new XML writer for the given output stream.
+     *
+     * @param output the output stream
+     * @throws IOException if the writer cannot be created
+     */
     public XmlWriter(OutputStream output) throws IOException {
         try {
             XMLOutputFactory factory = XMLOutputFactory.newInstance();
@@ -20,6 +26,11 @@ public final class XmlWriter implements AutoCloseable {
         }
     }
 
+    /**
+     * Writes the XML declaration.
+     *
+     * @throws IOException if an I/O error occurs
+     */
     public void startDocument() throws IOException {
         try {
             writer.writeStartDocument("UTF-8", "1.0");
@@ -28,6 +39,11 @@ public final class XmlWriter implements AutoCloseable {
         }
     }
 
+    /**
+     * Ends the document and flushes.
+     *
+     * @throws IOException if an I/O error occurs
+     */
     public void endDocument() throws IOException {
         try {
             writer.writeEndDocument();
@@ -37,6 +53,12 @@ public final class XmlWriter implements AutoCloseable {
         }
     }
 
+    /**
+     * Starts an element with the given name.
+     *
+     * @param name the element name
+     * @throws IOException if an I/O error occurs
+     */
     public void startElement(String name) throws IOException {
         try {
             writer.writeStartElement(name);
@@ -51,6 +73,7 @@ public final class XmlWriter implements AutoCloseable {
      * @param prefix       the namespace prefix (e.g. "c")
      * @param localName    the local name (e.g. "chartSpace")
      * @param namespaceUri the namespace URI
+     * @throws IOException if an I/O error occurs
      */
     public void startElement(String prefix, String localName, String namespaceUri) throws IOException {
         try {
@@ -60,6 +83,11 @@ public final class XmlWriter implements AutoCloseable {
         }
     }
 
+    /**
+     * Ends the current element.
+     *
+     * @throws IOException if an I/O error occurs
+     */
     public void endElement() throws IOException {
         try {
             writer.writeEndElement();
@@ -68,6 +96,12 @@ public final class XmlWriter implements AutoCloseable {
         }
     }
 
+    /**
+     * Writes an empty element.
+     *
+     * @param name the element name
+     * @throws IOException if an I/O error occurs
+     */
     public void emptyElement(String name) throws IOException {
         try {
             writer.writeEmptyElement(name);
@@ -82,6 +116,7 @@ public final class XmlWriter implements AutoCloseable {
      * @param prefix       the namespace prefix (e.g. "c")
      * @param localName    the local name (e.g. "layout")
      * @param namespaceUri the namespace URI
+     * @throws IOException if an I/O error occurs
      */
     public void emptyElement(String prefix, String localName, String namespaceUri) throws IOException {
         try {
@@ -91,6 +126,13 @@ public final class XmlWriter implements AutoCloseable {
         }
     }
 
+    /**
+     * Writes an attribute on the current element.
+     *
+     * @param name the attribute name
+     * @param value the attribute value
+     * @throws IOException if an I/O error occurs
+     */
     public void attribute(String name, String value) throws IOException {
         try {
             writer.writeAttribute(name, value);
@@ -104,6 +146,7 @@ public final class XmlWriter implements AutoCloseable {
      *
      * @param prefix       the namespace prefix
      * @param namespaceUri the namespace URI
+     * @throws IOException if an I/O error occurs
      */
     public void namespace(String prefix, String namespaceUri) throws IOException {
         try {
@@ -118,6 +161,7 @@ public final class XmlWriter implements AutoCloseable {
      *
      * @param prefix       the namespace prefix
      * @param namespaceUri the namespace URI
+     * @throws IOException if an I/O error occurs
      */
     public void setPrefix(String prefix, String namespaceUri) throws IOException {
         try {
@@ -127,6 +171,12 @@ public final class XmlWriter implements AutoCloseable {
         }
     }
 
+    /**
+     * Writes text content.
+     *
+     * @param text the text to write
+     * @throws IOException if an I/O error occurs
+     */
     public void text(String text) throws IOException {
         try {
             writer.writeCharacters(text);
