@@ -16,6 +16,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.security.GeneralSecurityException;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,6 +48,12 @@ final class XlsxWriter implements Closeable {
     private static final String NS_RELATIONSHIPS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
     private static final String NS_CONTENT_TYPES = "http://schemas.openxmlformats.org/package/2006/content-types";
     private static final String NS_PACKAGE_RELS = "http://schemas.openxmlformats.org/package/2006/relationships";
+    private static final String NS_CORE_PROPERTIES = "http://schemas.openxmlformats.org/package/2006/metadata/core-properties";
+    private static final String NS_DC = "http://purl.org/dc/elements/1.1/";
+    private static final String NS_DCTERMS = "http://purl.org/dc/terms/";
+    private static final String NS_XSI = "http://www.w3.org/2001/XMLSchema-instance";
+    private static final String NS_EXTENDED_PROPERTIES = "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties";
+    private static final String NS_VT = "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes";
 
     private final Workbook workbook;
     private final @Nullable Path path;
@@ -114,6 +123,8 @@ final class XlsxWriter implements Closeable {
     private void writeAllParts(ZipWriter zip) throws IOException {
         writeContentTypes(zip);
         writeRootRels(zip);
+        writeDocPropsCore(zip);
+        writeDocPropsApp(zip);
         writeWorkbookRels(zip);
         writeWorkbook(zip);
         writeStyles(zip);
@@ -184,6 +195,15 @@ final class XlsxWriter implements Closeable {
                 xml.attribute("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml");
             }
 
+            // docProps
+            xml.emptyElement("Override");
+            xml.attribute("PartName", "/docProps/core.xml");
+            xml.attribute("ContentType", "application/vnd.openxmlformats-package.core-properties+xml");
+
+            xml.emptyElement("Override");
+            xml.attribute("PartName", "/docProps/app.xml");
+            xml.attribute("ContentType", "application/vnd.openxmlformats-officedocument.extended-properties+xml");
+
             // Extension content types (charts, drawings, media, etc.)
             if (!writeExtensions.isEmpty()) {
                 ContentTypeRegistry registry = new ContentTypeRegistryImpl(xml);
@@ -211,7 +231,64 @@ final class XlsxWriter implements Closeable {
             xml.attribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument");
             xml.attribute("Target", "xl/workbook.xml");
 
+            xml.emptyElement("Relationship");
+            xml.attribute("Id", "rId2");
+            xml.attribute("Type", "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties");
+            xml.attribute("Target", "docProps/core.xml");
+
+            xml.emptyElement("Relationship");
+            xml.attribute("Id", "rId3");
+            xml.attribute("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties");
+            xml.attribute("Target", "docProps/app.xml");
+
             xml.endElement();
+            xml.endDocument();
+        }
+    }
+
+    private void writeDocPropsCore(ZipWriter zip) throws IOException {
+        try (OutputStream os = zip.newEntry("docProps/core.xml");
+             XmlWriter xml = new XmlWriter(os)) {
+
+            xml.startDocument();
+            xml.startElement("cp", "coreProperties", NS_CORE_PROPERTIES);
+            xml.namespace("cp", NS_CORE_PROPERTIES);
+            xml.namespace("dc", NS_DC);
+            xml.namespace("dcterms", NS_DCTERMS);
+            xml.namespace("xsi", NS_XSI);
+
+            // dcterms:created
+            xml.startElement("dcterms", "created", NS_DCTERMS);
+            xml.attribute("xsi:type", "dcterms:W3CDTF");
+            String now = OffsetDateTime.now(ZoneOffset.UTC)
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+            xml.text(now);
+            xml.endElement();
+
+            // dc:creator
+            xml.startElement("dc", "creator", NS_DC);
+            xml.text("LiteXL");
+            xml.endElement();
+
+            xml.endElement(); // cp:coreProperties
+            xml.endDocument();
+        }
+    }
+
+    private void writeDocPropsApp(ZipWriter zip) throws IOException {
+        try (OutputStream os = zip.newEntry("docProps/app.xml");
+             XmlWriter xml = new XmlWriter(os)) {
+
+            xml.startDocument();
+            xml.startElement("Properties");
+            xml.attribute("xmlns", NS_EXTENDED_PROPERTIES);
+            xml.attribute("xmlns:vt", NS_VT);
+
+            xml.startElement("Application");
+            xml.text("LiteXL");
+            xml.endElement(); // Application
+
+            xml.endElement(); // Properties
             xml.endDocument();
         }
     }

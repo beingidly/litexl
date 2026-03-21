@@ -1,6 +1,6 @@
 package com.beingidly.litexl.chart.internal;
 
-import com.beingidly.litexl.XmlWriter;
+import com.beingidly.litexl.*;
 import com.beingidly.litexl.chart.*;
 import com.beingidly.litexl.chart.axis.*;
 import com.beingidly.litexl.chart.style.*;
@@ -23,7 +23,8 @@ final class ChartXmlWriter {
     static final String NS_A = "http://schemas.openxmlformats.org/drawingml/2006/main";
     static final String NS_R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 
-    static void write(XmlWriter xml, Chart chart, String sheetName) throws IOException {
+    static void write(XmlWriter xml, Chart chart, Sheet sheet) throws IOException {
+        String sheetName = sheet.name();
         xml.startDocument();
 
         // Root element with proper namespace bindings
@@ -50,7 +51,7 @@ final class ChartXmlWriter {
         // Plot area
         cStart(xml, "plotArea");
         cEmpty(xml, "layout");
-        writeChartTypeElement(xml, chart, sheetName);
+        writeChartTypeElement(xml, chart, sheet);
         if (chart.type().hasAxes()) {
             writeAxes(xml, chart);
         }
@@ -122,7 +123,7 @@ final class ChartXmlWriter {
 
     // --- Chart type element ---
 
-    private static void writeChartTypeElement(XmlWriter xml, Chart chart, String sheetName) throws IOException {
+    private static void writeChartTypeElement(XmlWriter xml, Chart chart, Sheet sheet) throws IOException {
         // xmlTag returns "c:barChart" etc. - extract local name
         String tag = xmlTag(chart.type());
         String localName = tag.substring(tag.indexOf(':') + 1);
@@ -148,7 +149,7 @@ final class ChartXmlWriter {
 
         // Series
         for (int i = 0; i < chart.series().size(); i++) {
-            writeSeries(xml, chart.series().get(i), i, sheetName, chart.type());
+            writeSeries(xml, chart.series().get(i), i, sheet, chart.type());
         }
 
         // Axis IDs
@@ -163,7 +164,7 @@ final class ChartXmlWriter {
     // --- Series ---
 
     private static void writeSeries(XmlWriter xml, ChartSeries series, int index,
-                                     String sheetName, ChartType chartType) throws IOException {
+                                     Sheet sheet, ChartType chartType) throws IOException {
         cStart(xml, "ser");
 
         cEmptyVal(xml, "idx", String.valueOf(index));
@@ -189,11 +190,11 @@ final class ChartXmlWriter {
 
         if (series.categories() != null) {
             String catTag = chartType == ChartType.SCATTER ? "xVal" : "cat";
-            writeDataSourceElement(xml, catTag, series.categories(), sheetName);
+            writeDataSourceElement(xml, catTag, series.categories(), sheet);
         }
 
         String valTag = chartType == ChartType.SCATTER ? "yVal" : "val";
-        writeDataSourceElement(xml, valTag, series.values(), sheetName);
+        writeDataSourceElement(xml, valTag, series.values(), sheet);
 
         if (series.smooth()) cEmptyVal(xml, "smooth", "1");
         if (series.explosion() > 0) cEmptyVal(xml, "explosion", String.valueOf(series.explosion()));
@@ -204,16 +205,17 @@ final class ChartXmlWriter {
     // --- Data sources ---
 
     private static void writeDataSourceElement(XmlWriter xml, String localName,
-                                                ChartDataSource source, String sheetName) throws IOException {
+                                                ChartDataSource source, Sheet sheet) throws IOException {
         cStart(xml, localName);
         boolean isNumeric = localName.equals("val") || localName.equals("yVal") || localName.equals("xVal");
 
         switch (source) {
             case ChartDataSource.CellReference ref -> {
-                String qualifiedRef = ref.qualify(sheetName).reference();
+                String qualifiedRef = ref.qualify(sheet.name()).reference();
                 String refTag = isNumeric ? "numRef" : "strRef";
                 cStart(xml, refTag);
                 cStart(xml, "f"); xml.text(qualifiedRef); xml.endElement();
+                writeCache(xml, ref, sheet, isNumeric);
                 xml.endElement();
             }
             case ChartDataSource.NumberArray arr -> {
@@ -238,6 +240,86 @@ final class ChartXmlWriter {
             }
         }
         xml.endElement();
+    }
+
+    /**
+     * Writes cache data (strCache or numCache) for a CellReference by reading actual cell values.
+     */
+    private static void writeCache(XmlWriter xml, ChartDataSource.CellReference ref,
+                                    Sheet sheet, boolean isNumeric) throws IOException {
+        // Parse the range: strip sheet name prefix if present
+        String range = ref.reference();
+        int bangIdx = range.indexOf('!');
+        if (bangIdx >= 0) {
+            range = range.substring(bangIdx + 1);
+        }
+
+        // Parse start:end (e.g. "$A$2:$A$7")
+        String[] parts = range.split(":");
+        if (parts.length != 2) return;
+
+        int[] start = parseCellRef(parts[0]);
+        int[] end = parseCellRef(parts[1]);
+        if (start == null || end == null) return;
+
+        int startRow = start[0], startCol = start[1];
+        int endRow = end[0], endCol = end[1];
+
+        // Determine if it's a column range or row range
+        boolean isColumnRange = (startCol == endCol);
+        int count = isColumnRange ? (endRow - startRow + 1) : (endCol - startCol + 1);
+
+        String cacheTag = isNumeric ? "numCache" : "strCache";
+        cStart(xml, cacheTag);
+        cEmptyVal(xml, "ptCount", String.valueOf(count));
+
+        for (int i = 0; i < count; i++) {
+            int row = isColumnRange ? (startRow + i) : startRow;
+            int col = isColumnRange ? startCol : (startCol + i);
+            Cell cell = sheet.getCell(row, col);
+            if (cell == null) continue;
+
+            String textValue = cellValueAsString(cell);
+            if (textValue == null) continue;
+
+            cStart(xml, "pt"); xml.attribute("idx", String.valueOf(i));
+            cStart(xml, "v"); xml.text(textValue); xml.endElement();
+            xml.endElement(); // c:pt
+        }
+        xml.endElement(); // cache tag
+    }
+
+    /** Parses a cell reference like "$A$2" or "A2" into [row, col] (0-based). Returns null on failure. */
+    private static int[] parseCellRef(String ref) {
+        String cleaned = ref.replace("$", "");
+        int i = 0;
+        while (i < cleaned.length() && Character.isLetter(cleaned.charAt(i))) i++;
+        if (i == 0 || i == cleaned.length()) return null;
+
+        String colPart = cleaned.substring(0, i).toUpperCase();
+        int col = 0;
+        for (int j = 0; j < colPart.length(); j++) {
+            col = col * 26 + (colPart.charAt(j) - 'A' + 1);
+        }
+        col--;
+
+        try {
+            int row = Integer.parseInt(cleaned.substring(i)) - 1;
+            return new int[]{row, col};
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static String cellValueAsString(Cell cell) {
+        CellValue val = cell.value();
+        return switch (val) {
+            case CellValue.Text t -> t.value();
+            case CellValue.Number n -> String.valueOf(n.value());
+            case CellValue.Bool b -> b.value() ? "1" : "0";
+            case CellValue.Date d -> d.value().toString();
+            case CellValue.Empty _, CellValue.Formula _, CellValue.Error _ -> null;
+        };
     }
 
     // --- Axes ---

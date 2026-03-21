@@ -1610,4 +1610,24 @@ class XlsxWriterTest {
 
         assertTrue(Files.exists(file));
     }
+
+    @Test
+    void writesDocPropsEntries() throws Exception {
+        Path path = tempDir.resolve("docprops.xlsx");
+        try (Workbook wb = Workbook.create()) {
+            wb.addSheet("Sheet1").cell(0, 0).set("test");
+            wb.save(path);
+        }
+
+        // Verify docProps ZIP entries exist
+        try (java.util.zip.ZipFile zf = new java.util.zip.ZipFile(path.toFile())) {
+            assertNotNull(zf.getEntry("docProps/core.xml"));
+            assertNotNull(zf.getEntry("docProps/app.xml"));
+        }
+
+        // Verify round-trip still works
+        try (Workbook wb = Workbook.open(path)) {
+            assertEquals("test", wb.getSheet(0).cell(0, 0).string());
+        }
+    }
 }

@@ -99,7 +99,7 @@ public final class ChartWriteExtension implements WriteExtension {
 
                 try (OutputStream os = ctx.newEntry("xl/charts/chart" + globalChartNum + ".xml");
                      XmlWriter xml = new XmlWriter(os)) {
-                    ChartXmlWriter.write(xml, chart, sheet.name());
+                    ChartXmlWriter.write(xml, chart, sheet);
                 }
             }
 
