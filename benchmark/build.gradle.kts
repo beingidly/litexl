@@ -2,7 +2,7 @@ plugins {
     java
     application
     id("me.champeau.jmh") version "0.7.3"
-    id("org.graalvm.buildtools.native") version "0.11.4"
+    id("org.graalvm.buildtools.native") version "0.11.5"
 }
 
 application {
